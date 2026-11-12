@@ -31,3 +31,71 @@ ssh-keygen -t ed25519 -C "deploy-key"
 
 # Copy key to server:
 ssh-copy-id deploy@SERVER_IP
+
+
+
+
+
+
+## Configure Ownership
+sudo chown -R deploy:ops /var/log/shoplite
+sudo chmod -R 750 /var/log/shoplite
+
+
+## Add Exactly One ACL Rule
+sudo setfacl -m u:deploy:rX /var/log/shoplite
+
+to verify: ls -ld
+
+## Why 777 Is Incorrect: 777 is incorrect because it gives every user on the system full read, write, and execute access, violating the principle of least privilege.
+
+
+
+
+
+## systemd Backup Service
+# Creating Bakcup directory
+sudo mkdir -p /var/backups/shoplite
+sudo chown postgres:postgres /var/backups/shoplite
+
+
+# Create shoplite-backup.service
+sudo nano /etc/systemd/system/shoplite-backup.service
+
+[Unit]
+Description=ShopLite PostgreSQL Backup Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=postgres
+ExecStart=/bin/bash -c '\
+docker exec postgres \
+pg_dump -U postgres shoplite \
+> /var/backups/shoplite/shoplite-$(date +%%F).sql'
+Restart=on-failure
+
+
+
+# Create shoplite-backup.timer
+sudo nano /etc/systemd/system/shoplite-backup.timer
+
+
+[Unit]
+Description=Nightly ShopLite Backup Timer
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+
+# Reload systemd
+sudo systemctl daemon-reload
+
+#Enable and Start Timer
+sudo systemctl enable shoplite-backup.timer
+sudo systemctl start shoplite-backup.timer
