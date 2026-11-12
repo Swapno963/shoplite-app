@@ -1,0 +1,11 @@
+Commands:
+
+1. make build:	Builds all Docker images defined in docker-compose.yml using docker compose build.
+
+2. make up:	Starts all containers in detached mode (-d), allowing them to run in the background.
+
+3. make down:	Stops and removes all containers, networks, and resources created by Docker Compose.
+
+4. make test:	Runs the Python test suite using pytest. It first checks if a virtual environment exists (.venv/bin/pytest) and uses it; otherwise it falls back to python3 -m pytest.
+
+5. make smoke:	Executes scripts/smoke-test.sh, typically used for basic end-to-end validation that the application is running correctly.
