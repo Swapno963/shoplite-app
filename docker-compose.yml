@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shoplite
+      POSTGRES_USER: shoplite
+      POSTGRES_PASSWORD: shoplite
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shoplite -d shoplite"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  catalog-api:
+    build: ./application/catalog-api
+    environment:
+      SERVICE_NAME: catalog-api
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-change-me}
+      DJANGO_DEBUG: "false"
+      ALLOWED_HOSTS: "*"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: shoplite
+      POSTGRES_USER: shoplite
+      POSTGRES_PASSWORD: shoplite
+      REDIS_URL: redis://redis:6379/0
+      ORDERS_QUEUE: orders:pending
+      CHAOS_LATENCY_MS: ${CHAOS_LATENCY_MS:-0}
+      CHAOS_ERROR_RATE: ${CHAOS_ERROR_RATE:-0}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  order-worker:
+    build: ./application/order-worker
+    environment:
+      SERVICE_NAME: order-worker
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: shoplite
+      POSTGRES_USER: shoplite
+      POSTGRES_PASSWORD: shoplite
+      REDIS_URL: redis://redis:6379/0
+      ORDERS_QUEUE: orders:pending
+      CHAOS_MEMORY_LEAK: ${CHAOS_MEMORY_LEAK:-false}
+      CHAOS_SLOW_DB: ${CHAOS_SLOW_DB:-false}
+    stop_grace_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      catalog-api:
+        condition: service_started
+
+  web:
+    build: ./application/web
+    ports:
+      - "8080:80"
+    depends_on:
+      - catalog-api
+
+volumes:
+  postgres_data:
