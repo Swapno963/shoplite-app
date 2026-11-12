@@ -1,0 +1,14 @@
+aws_region   = "ap-southeast-1"
+project_name = "shoplite"
+
+# Required: your public IP with /32, used only for SSH to the bastion.
+admin_cidr = "x.x.x.x/32"
+
+# Optional EC2 key pair for SSH through the bastion. Leave unset to use SSM only.
+# key_name = "shoplite"
+
+ingress_node_port = 30080
+
+# Optional Route 53 alias to the ALB.
+# route53_zone_id = "ZXXXXXXXXXXXX"
+# domain_name     = "shop.example.com"
