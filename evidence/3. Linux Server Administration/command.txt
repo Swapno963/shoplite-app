@@ -9,7 +9,7 @@ sudo passwd deploy
 
 # Add deploy user to ops group
 sudo usermod -aG ops deploy
-
+sudo usermod -aG docker deploy
 
 
 
@@ -25,19 +25,13 @@ sudo systemctl restart ssh
 
 
 
-
-# On local machine 
-ssh-keygen -t ed25519 -C "deploy-key"
-
-# Copy key to server:
-ssh-copy-id deploy@SERVER_IP
-
-
-
-
+# Install 
+sudo apt update
+sudo apt install -y acl
 
 
 ## Configure Ownership
+sudo mkdir -p /var/log/shoplite
 sudo chown -R deploy:ops /var/log/shoplite
 sudo chmod -R 750 /var/log/shoplite
 
@@ -50,6 +44,28 @@ to verify: ls -ld
 ## Why 777 Is Incorrect: 777 is incorrect because it gives every user on the system full read, write, and execute access, violating the principle of least privilege.
 
 
+
+
+
+
+
+## Run the application
+sudo mkdir -p /opt/shoplite
+sudo chown deploy:ops /opt/shoplite
+sudo chmod 775 /opt/shoplite
+
+
+
+
+## Then switch to deploy
+sudo su - deploy
+
+
+cd /opt/shoplite
+
+
+# Clone project
+git clone https://github.com/Swapno963/shoplite-app.git
 
 
 
@@ -99,3 +115,8 @@ sudo systemctl daemon-reload
 #Enable and Start Timer
 sudo systemctl enable shoplite-backup.timer
 sudo systemctl start shoplite-backup.timer
+
+
+
+
+
