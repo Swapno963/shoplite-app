@@ -1,0 +1,33 @@
+# Create ops group
+sudo groupadd ops
+
+# Create deploy user
+sudo useradd -m -s /bin/bash deploy
+
+# Set password (optional if using only SSH keys)
+sudo passwd deploy
+
+# Add deploy user to ops group
+sudo usermod -aG ops deploy
+
+
+
+
+Disable root login and password authentication:
+sudo nano /etc/ssh/sshd_config
+
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+sudo systemctl restart ssh
+
+
+
+
+
+# On local machine 
+ssh-keygen -t ed25519 -C "deploy-key"
+
+# Copy key to server:
+ssh-copy-id deploy@SERVER_IP
