@@ -1,0 +1,27 @@
+# roles/prepare_nodes/tasks/main.yml
+
+- name: Update packages
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Disable swap
+  ansible.builtin.command: swapoff -a
+
+- name: Install containerd
+  ansible.builtin.apt:
+    name: containerd
+    state: present
+
+- name: Install kubelet
+  ansible.builtin.apt:
+    name: kubelet
+    state: present
+
+- name: Install kubeadm
+  ansible.builtin.apt:
+    name: kubeadm
+    state: present
+
+- name: Configure kernel
+  ansible.builtin.command:
+    cmd: sysctl -w net.bridge.bridge-nf-call-iptables=1

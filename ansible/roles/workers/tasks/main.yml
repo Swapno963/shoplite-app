@@ -1,0 +1,67 @@
+---
+
+- name: Ensure containerd is running
+  ansible.builtin.systemd:
+    name: containerd
+    state: started
+    enabled: true
+
+- name: Ensure kubelet is enabled
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+
+- name: Check whether worker already joined
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: worker_joined
+
+- name: Verify join command exists
+  ansible.builtin.stat:
+    path: "{{ local_join_command_file }}"
+  register: join_command_file
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Fail if join command missing
+  ansible.builtin.fail:
+    msg: >
+      Join command not found.
+      Run initialize-control-plane first.
+  when: not join_command_file.stat.exists
+  run_once: true
+
+- name: Read join command
+  ansible.builtin.set_fact:
+    kubeadm_join_command: "{{ lookup('file', local_join_command_file) }}"
+  no_log: true
+
+- name: Join worker to cluster
+  ansible.builtin.shell:
+    cmd: "{{ kubeadm_join_command }}"
+    creates: /etc/kubernetes/kubelet.conf
+  register: join_result
+  retries: 3
+  delay: 20
+  until: join_result.rc == 0
+  when: not worker_joined.stat.exists
+  no_log: true
+
+- name: Ensure kubelet running
+  ansible.builtin.systemd:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Verify kubelet service
+  ansible.builtin.command:
+    cmd: systemctl is-active kubelet
+  changed_when: false
+  register: kubelet_status
+
+- name: Display worker status
+  ansible.builtin.debug:
+    msg:
+      - "Node: {{ inventory_hostname }}"
+      - "Kubelet: {{ kubelet_status.stdout }}"

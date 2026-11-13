@@ -1,0 +1,26 @@
+---
+
+- name: Initialize Kubernetes Control Plane
+  hosts: control_plane
+  become: true
+
+  vars:
+
+    pod_network_cidr: "10.244.0.0/16"
+
+    containerd_socket: "unix:///run/containerd/containerd.sock"
+
+    kubeconfig_directory: "/home/{{ ansible_user }}/.kube"
+
+    kubeconfig_file: "/home/{{ ansible_user }}/.kube/config"
+
+    local_artifacts_directory: "{{ playbook_dir }}/../artifacts"
+
+    local_kubeconfig_file: "{{ local_artifacts_directory }}/kubeconfig"
+
+    local_join_command_file: "{{ local_artifacts_directory }}/kubeadm-join-command"
+
+  roles:
+    - control_plane_init
+    - join_token
+    - kubeconfig

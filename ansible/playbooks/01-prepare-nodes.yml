@@ -1,0 +1,7 @@
+---
+- name: Prepare Kubernetes Nodes
+  hosts: k8s_cluster
+  become: true
+
+  roles:
+    - prepare_nodes

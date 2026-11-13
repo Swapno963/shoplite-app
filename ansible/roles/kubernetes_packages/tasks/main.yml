@@ -1,0 +1,77 @@
+---
+
+- name: Verify operating system
+  assert:
+    that:
+      - ansible_distribution == "Ubuntu"
+
+- name: Verify containerd installed
+  stat:
+    path: /usr/bin/containerd
+  register: containerd_binary
+
+- name: Fail when containerd missing
+  fail:
+    msg: "Containerd must be installed first"
+  when: not containerd_binary.stat.exists
+
+- name: Install prerequisites
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gpg
+    state: present
+    update_cache: true
+
+- name: Create keyring directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download repository key
+  get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_minor_version }}/deb/Release.key"
+    dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+    mode: "0644"
+
+- name: Convert key
+  command:
+    cmd: >
+      gpg --dearmor
+      --yes
+      --output /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      /etc/apt/keyrings/kubernetes-apt-keyring.asc
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_minor_version }}/deb/ /"
+    filename: kubernetes
+    state: present
+
+- name: Install packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: true
+
+- name: Hold packages
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: Enable kubelet
+  systemd:
+    name: kubelet
+    enabled: true
+    state: started

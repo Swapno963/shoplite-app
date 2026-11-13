@@ -1,0 +1,20 @@
+---
+
+- name: Install Flannel CNI
+  ansible.builtin.command:
+    cmd: >
+      kubectl apply -f
+      https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Wait for coredns
+  ansible.builtin.command:
+    cmd: kubectl get pods -n kube-system
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: pod_check
+  retries: 20
+  delay: 15
+  until: "'Running' in pod_check.stdout"
+  changed_when: false

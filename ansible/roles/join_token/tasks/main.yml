@@ -1,0 +1,25 @@
+---
+
+- name: Generate worker join command
+  ansible.builtin.command:
+    cmd: kubeadm token create --ttl 24h --print-join-command
+  register: kubeadm_join_command
+  changed_when: false
+  no_log: true
+
+- name: Create local artifacts directory
+  ansible.builtin.file:
+    path: "{{ local_artifacts_directory }}"
+    state: directory
+    mode: "0700"
+  delegate_to: localhost
+  become: false
+
+- name: Save worker join command locally
+  ansible.builtin.copy:
+    content: "{{ kubeadm_join_command.stdout }} --cri-socket={{ containerd_socket }}"
+    dest: "{{ local_join_command_file }}"
+    mode: "0600"
+  delegate_to: localhost
+  become: false
+  no_log: true

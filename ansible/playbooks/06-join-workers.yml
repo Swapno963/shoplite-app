@@ -1,0 +1,7 @@
+---
+- name: Join Kubernetes Workers
+  hosts: workers
+  become: true
+
+  roles:
+    - workers

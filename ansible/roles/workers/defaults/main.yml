@@ -1,0 +1,3 @@
+local_artifacts_directory: "{{ playbook_dir }}/../artifacts"
+
+local_join_command_file: "{{ local_artifacts_directory }}/kubeadm-join-command"
