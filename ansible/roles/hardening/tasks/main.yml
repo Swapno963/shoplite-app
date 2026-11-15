@@ -1,0 +1,77 @@
+---
+# Create ops group
+
+- name: Create ops group
+  group:
+    name: ops
+    state: present
+
+# Create deploy user
+
+- name: Create deploy user
+  user:
+    name: deploy
+    create_home: yes
+    shell: /bin/bash
+    state: present
+
+# Install ACL package
+
+- name: Install acl package
+  apt:
+    name: acl
+    state: present
+    update_cache: yes
+
+# Create application log directory
+
+- name: Create shoplite log directory
+  file:
+    path: /var/log/shoplite
+    state: directory
+    owner: deploy
+    group: ops
+    mode: "0750"
+
+# Create application directory
+
+- name: Create application directory
+  file:
+    path: /opt/shoplite
+    state: directory
+    owner: deploy
+    group: ops
+    mode: "0775"
+
+# Set ACL
+
+- name: Configure ACL on log directory
+  acl:
+    path: /var/log/shoplite
+    entity: deploy
+    etype: user
+    permissions: rX
+    state: present
+
+# SSH hardening
+
+- name: Disable root login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+  notify: restart ssh
+
+- name: Disable password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  notify: restart ssh
+
+- name: Enable public key authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PubkeyAuthentication'
+    line: 'PubkeyAuthentication yes'
+  notify: restart ssh

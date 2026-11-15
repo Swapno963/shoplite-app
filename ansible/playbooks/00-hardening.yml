@@ -1,0 +1,7 @@
+---
+- name: Apply node hardening
+  hosts: all
+  become: true
+
+  roles:
+    - hardening

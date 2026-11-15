@@ -65,6 +65,19 @@ sudo su - deploy
 cd /opt/shoplite
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Clone project
 git clone https://github.com/Swapno963/shoplite-app.git
 

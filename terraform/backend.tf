@@ -8,8 +8,7 @@ terraform {
     }
   }
 
-  # Apply terraform/bootstrap first, then:
-  #   terraform init -backend-config=backend.hcl
+
   backend "s3" {
     bucket         = "shoplite-terraform-state"
     key            = "infra/terraform.tfstate"
