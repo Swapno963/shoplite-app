@@ -4,8 +4,6 @@ sudo groupadd ops
 # Create deploy user
 sudo useradd -m -s /bin/bash deploy
 
-# Set password (optional if using only SSH keys)
-sudo passwd deploy
 
 # Add deploy user to ops group
 sudo usermod -aG ops deploy

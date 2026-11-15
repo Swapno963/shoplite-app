@@ -1,0 +1,32 @@
+1. create vpc
+2. create subnet
+3. create internet gateway
+4. Route table
+5. associate subent with route table
+6. Edit route table, if destination is 0.0.0.0/0 then it will use igw 
+7. Creating security group
+Create 3 inbound rules
+TCP : 22 : 0.0.0.0/0
+TCP : 80 : 0.0.0.0/0
+TCP : 443 : 0.0.0.0/0
+
+8. Create ec2 instance of ubuntu 24.04
+9. Give readonly permission: chmod 400 shoplite-q3.pem
+10. shh into ec2 machine: ssh -i shoplite-q3.pem ubuntu@13.215.46.100
+
+
+
+
+
+### Install docker
+sudo apt update
+
+sudo apt install -y docker.io 
+
+sudo apt install docker-compose-v2
+sudo apt install -y make
+
+
+# Verify installation
+docker --version
+docker compose version
