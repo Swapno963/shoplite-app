@@ -40,6 +40,7 @@ sudo chmod -R 750 /var/log/shoplite
 sudo setfacl -m u:deploy:rX /var/log/shoplite
 
 to verify: ls -ld
+getfacl /var/log/shoplite/
 
 ## Why 777 Is Incorrect: 777 is incorrect because it gives every user on the system full read, write, and execute access, violating the principle of least privilege.
 
@@ -73,6 +74,7 @@ git clone https://github.com/Swapno963/shoplite-app.git
 # Creating Bakcup directory
 sudo mkdir -p /var/backups/shoplite
 sudo chown postgres:postgres /var/backups/shoplite
+getfacl /var/backups/shoplite/
 
 
 # Create shoplite-backup.service
@@ -120,3 +122,24 @@ sudo systemctl start shoplite-backup.timer
 
 
 
+## Demonstrate the output 
+systemctl status 
+systemctl list-timers
+
+
+## which ports server is actually listening on
+ss -tulpn
+
+
+
+
+Demonstrate an open port
+Test port 80:
+curl -I http://192.168.1.100:80
+nc -vz 192.168.1.100 80
+
+
+
+
+Demonstrate a blocked port
+nc -vz -w 3 192.168.1.100 8080
