@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: redis-networkpolicy
+  namespace: {{ .Values.namespace }}
+
+spec:
+
+  podSelector:
+    matchLabels:
+      app: redis
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+
+    - from:
+
+        - podSelector:
+            matchLabels:
+              app: catalog-api
+
+        - podSelector:
+            matchLabels:
+              app: order-worker
+
+      ports:
+
+        - protocol: TCP
+          port: 6379

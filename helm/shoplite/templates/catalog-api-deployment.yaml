@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: catalog-api
+  namespace: {{ .Values.namespace }}
+
+spec:
+  replicas: {{ .Values.catalogApi.replicaCount }}
+
+  strategy:
+    type: RollingUpdate
+
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: catalog-api
+
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+
+      containers:
+        - name: catalog-api
+
+          image: "{{ .Values.catalogApi.image.repository }}:{{ .Values.catalogApi.image.tag }}"
+
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+
+          ports:
+            - containerPort: {{ .Values.catalogApi.service.targetPort }}
+
+          envFrom:
+            - configMapRef:
+                name: shoplite-config
+
+            - secretRef:
+                name: shoplite-secret
+
+          resources:
+{{ toYaml .Values.catalogApi.resources | indent 12 }}
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.catalogApi.probes.livenessPath }}
+              port: {{ .Values.catalogApi.service.targetPort }}
+
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.catalogApi.probes.readinessPath }}
+              port: {{ .Values.catalogApi.service.targetPort }}
+
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+
+      terminationGracePeriodSeconds: 60

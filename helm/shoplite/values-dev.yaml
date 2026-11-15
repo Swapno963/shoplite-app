@@ -1,0 +1,46 @@
+ingress:
+  host: dev.shoplite.local
+
+web:
+
+  replicaCount: 1
+
+  image:
+    tag: dev
+
+catalogApi:
+
+  replicaCount: 1
+
+  image:
+    tag: dev
+
+orderWorker:
+
+  replicaCount: 1
+
+  image:
+    tag: dev
+
+  hpa:
+    enabled: false
+
+postgres:
+
+  storage: 5Gi
+
+applicationConfig:
+
+  LOG_LEVEL: DEBUG
+
+  DJANGO_DEBUG: "true"
+
+  ALLOWED_HOSTS: "*"
+
+  LOG_LEVEL: "DEBUG"
+
+secrets:
+
+  djangoSecretKey: "dev-only-change-me"
+
+  postgresPassword: "shoplite"

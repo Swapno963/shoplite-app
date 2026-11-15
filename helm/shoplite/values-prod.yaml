@@ -1,0 +1,51 @@
+ingress:
+  host: shoplite.example.com
+
+web:
+
+  replicaCount: 2
+
+  image:
+    tag: stable
+
+catalogApi:
+
+  replicaCount: 3
+
+  image:
+    tag: stable
+
+orderWorker:
+
+  replicaCount: 1
+
+  image:
+    tag: stable
+
+  hpa:
+    enabled: true
+
+    minReplicas: 1
+
+    maxReplicas: 4
+
+    targetCPUUtilizationPercentage: 70
+
+postgres:
+
+  storage: 100Gi
+
+
+applicationConfig:
+
+  DJANGO_DEBUG: "false"
+
+  ALLOWED_HOSTS: "shoplite.example.com"
+
+  LOG_LEVEL: "INFO"
+
+secrets:
+
+  djangoSecretKey: "CHANGE_FROM_SECRET_MANAGER"
+
+  postgresPassword: "CHANGE_FROM_SECRET_MANAGER"

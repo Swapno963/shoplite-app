@@ -1,0 +1,21 @@
+apiVersion: v2
+
+name: shoplite
+
+description: Production-grade Shoplite application
+
+type: application
+
+version: 1.0.0
+
+appVersion: "1.0.0"
+
+keywords:
+  - ecommerce
+  - kubernetes
+  - shoplite
+
+maintainers:
+  - name: Swapno Mondol
+
+home: https://github.com/swapnomondol/shoplite-app

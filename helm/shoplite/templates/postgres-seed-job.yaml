@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: postgres-seed
+  namespace: {{ .Values.namespace }}
+
+spec:
+
+  backoffLimit: 3
+
+  template:
+
+    spec:
+
+      restartPolicy: Never
+
+      containers:
+
+        - name: seed
+
+          image: postgres:16
+
+          env:
+
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shoplite-secret
+                  key: POSTGRES_PASSWORD
+
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -U {{ .Values.postgres.username }}
+              do
+                echo "waiting for postgres..."
+                sleep 5
+              done
+
+              psql \
+                -h postgres \
+                -U {{ .Values.postgres.username }} \
+                -d {{ .Values.postgres.database }} <<EOF
+
+              CREATE TABLE IF NOT EXISTS products (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255),
+                price NUMERIC(10,2)
+              );
+
+              INSERT INTO products(name, price)
+              VALUES
+                ('Laptop', 999.99),
+                ('Keyboard', 89.99),
+                ('Mouse', 39.99)
+              ON CONFLICT DO NOTHING;
+
+              EOF

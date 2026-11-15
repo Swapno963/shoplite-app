@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: shoplite-config
+  namespace: {{ .Values.namespace }}
+
+data:
+
+  DJANGO_DEBUG: "{{ .Values.applicationConfig.DJANGO_DEBUG }}"
+  ALLOWED_HOSTS: "{{ .Values.applicationConfig.ALLOWED_HOSTS }}"
+
+  POSTGRES_HOST: "{{ .Values.applicationConfig.POSTGRES_HOST }}"
+  POSTGRES_PORT: "{{ .Values.applicationConfig.POSTGRES_PORT }}"
+  POSTGRES_DB: "{{ .Values.applicationConfig.POSTGRES_DB }}"
+  POSTGRES_USER: "{{ .Values.applicationConfig.POSTGRES_USER }}"
+
+  REDIS_URL: "{{ .Values.applicationConfig.REDIS_URL }}"
+
+  ORDERS_QUEUE: "{{ .Values.applicationConfig.ORDERS_QUEUE }}"
+
+  LOG_LEVEL: "{{ .Values.applicationConfig.LOG_LEVEL }}"
+
+  CHAOS_LATENCY_MS: "{{ .Values.applicationConfig.CHAOS_LATENCY_MS }}"
+  CHAOS_ERROR_RATE: "{{ .Values.applicationConfig.CHAOS_ERROR_RATE }}"
+  CHAOS_MEMORY_LEAK: "{{ .Values.applicationConfig.CHAOS_MEMORY_LEAK }}"
+  CHAOS_SLOW_DB: "{{ .Values.applicationConfig.CHAOS_SLOW_DB }}"
+
+  VITE_API_URL: "{{ .Values.applicationConfig.VITE_API_URL }}"
