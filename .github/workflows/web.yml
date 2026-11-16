@@ -19,6 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Print GitHub Context
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Repository ID: ${{ github.repository_id }}"
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
