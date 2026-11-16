@@ -23,7 +23,13 @@ jobs:
         run: |
           echo "Repository: ${{ github.repository }}"
           echo "Repository ID: ${{ github.repository_id }}"
-
+      - name: Debug Context
+        run: |
+          echo "Repository=${{ github.repository }}"
+          echo "Repository ID=${{ github.repository_id }}"
+          echo "Owner=${{ github.repository_owner }}"
+          echo "Ref=${{ github.ref }}"
+          
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
