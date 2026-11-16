@@ -14,7 +14,7 @@ ingress:
 web:
   replicaCount: 2
   image:
-    repository: YOUR_ECR_REPOSITORY/web
+    repository: 051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web
     tag: latest
   service:
     port: 80
@@ -30,7 +30,7 @@ web:
 catalogApi:
   replicaCount: 2
   image:
-    repository: YOUR_ECR_REPOSITORY/catalog-api
+    repository: 051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api
     tag: latest
   service:
     port: 8080
@@ -49,7 +49,7 @@ catalogApi:
 orderWorker:
   replicaCount: 1
   image:
-    repository: YOUR_ECR_REPOSITORY/order-worker
+    repository: 051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker
     tag: latest
   terminationGracePeriodSeconds: 300
   resources:

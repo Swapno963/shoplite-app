@@ -40,7 +40,7 @@ applicationConfig:
 
   DJANGO_DEBUG: "false"
 
-  ALLOWED_HOSTS: "shoplite.example.com"
+  ALLOWED_HOSTS: "*"
 
   LOG_LEVEL: "INFO"
 
