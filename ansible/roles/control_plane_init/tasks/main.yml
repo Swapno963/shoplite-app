@@ -21,11 +21,11 @@
       - "--cri-socket={{ containerd_socket }}"
   when: not control_plane_initialized.stat.exists
 
-- name: Wait for API server port
-  ansible.builtin.wait_for:
-    host: "{{ ansible_host }}"
-    port: 6443
-    state: started
-    timeout: 300
-  delegate_to: localhost
-  become: false
+- name: Wait for Kubernetes API to respond
+  ansible.builtin.command:
+    cmd: kubectl --kubeconfig=/etc/kubernetes/admin.conf get nodes
+  register: kubectl_check
+  retries: 30
+  delay: 10
+  until: kubectl_check.rc == 0
+  changed_when: false

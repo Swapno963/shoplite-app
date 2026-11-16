@@ -18,6 +18,9 @@ export LANG=en_US.UTF-8
 ## check if ansible can ssh into the remote servers: 
 ansible all -m ping
 
+## syntax check
+ansible-playbook -i inventory site.yml --syntax-check
+
 
 ## Run the playbook: 
 ansible-playbook -i inventroy <path_to_your_playbook>/install_nginx.yml

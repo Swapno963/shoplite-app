@@ -12,17 +12,6 @@
     name: containerd
     state: present
 
-- name: Install kubelet
-  ansible.builtin.apt:
-    name: kubelet
-    state: present
-
-- name: Install kubeadm
-  ansible.builtin.apt:
-    name: kubeadm
-    state: present
-
-
 - name: Load overlay
   command: modprobe overlay
 
