@@ -22,3 +22,6 @@ export const getProduct = (id) => request(`/products/${id}`);
 export const createOrder = (payload) =>
   request("/orders", { method: "POST", body: JSON.stringify(payload) });
 export const getOrder = (id) => request(`/orders/${id}`);
+
+
+// test
