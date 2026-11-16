@@ -21,6 +21,18 @@ export POSTGRES_PASSWORD='my-db-password'
 export DJANGO_SECRET_KEY='my-django-secret'
 export REDIS_PASSWORD='my-redis-secret'
 
+To run from host machine
+kubectl \
+  --kubeconfig=$HOME/.kube/shoplite-config \
+  get nodes
+
+or 
+mkdir -p ~/.kube
+
+cp admin.conf ~/.kube/config
+
+chmod 600 ~/.kube/config
+
 
 ## Then:
 kubectl create namespace shoplite --dry-run=client -o yaml | kubectl apply -f -
