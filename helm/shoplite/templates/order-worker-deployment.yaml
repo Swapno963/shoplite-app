@@ -37,7 +37,7 @@ spec:
                 name: shoplite-config
 
             - secretRef:
-                name: shoplite-secret
+                name: {{ .Values.secrets.existingSecret }}
 
           resources:
 {{ toYaml .Values.orderWorker.resources | indent 12 }}

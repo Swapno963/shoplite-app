@@ -40,7 +40,4 @@ applicationConfig:
   LOG_LEVEL: "DEBUG"
 
 secrets:
-
-  djangoSecretKey: "dev-only-change-me"
-
-  postgresPassword: "shoplite"
+  existingSecret: shoplite-secret

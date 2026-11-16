@@ -45,7 +45,4 @@ applicationConfig:
   LOG_LEVEL: "INFO"
 
 secrets:
-
-  djangoSecretKey: "CHANGE_FROM_SECRET_MANAGER"
-
-  postgresPassword: "CHANGE_FROM_SECRET_MANAGER"
+  existingSecret: shoplite-secret

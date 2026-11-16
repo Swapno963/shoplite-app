@@ -42,7 +42,7 @@ spec:
                 name: shoplite-config
 
             - secretRef:
-                name: shoplite-secret
+                name: {{ .Values.secrets.existingSecret }}
 
           resources:
 {{ toYaml .Values.catalogApi.resources | indent 12 }}

@@ -1,3 +1,52 @@
+## Install HELM
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
+
+## Build the dependency graph:
+helm dependency update .
+
+## Lint the umbrella chart:
+helm lint .
+
+## Render templates to verify:
+helm template mystack . | head -100
+
+
+
+
+## For local testing:
+export POSTGRES_PASSWORD='my-db-password'
+export DJANGO_SECRET_KEY='my-django-secret'
+export REDIS_PASSWORD='my-redis-secret'
+
+
+## Then:
+kubectl create namespace shoplite --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create secret generic shoplite-secret -n shoplite \
+  --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  --from-literal=DJANGO_SECRET_KEY="$DJANGO_SECRET_KEY" \
+  --from-literal=REDIS_PASSWORD="$REDIS_PASSWORD"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## For development
 helm install shoplite ./shoplite \
 -f values-dev.yaml

@@ -46,7 +46,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: shoplite-secret
+                  name: {{ .Values.secrets.existingSecret }}
                   key: POSTGRES_PASSWORD
 
           volumeMounts:
