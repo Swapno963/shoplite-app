@@ -32,7 +32,7 @@ jobs:
           docker build -t order-worker:${SHA} ./application/order-worker
 
       - name: Scan catalog-api
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
           image-ref: catalog-api:${{ env.SHA }}
           severity: CRITICAL
@@ -40,7 +40,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Scan web
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
           image-ref: web:${{ env.SHA }}
           severity: CRITICAL
@@ -48,7 +48,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Scan order-worker
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
           image-ref: order-worker:${{ env.SHA }}
           severity: CRITICAL

@@ -58,3 +58,86 @@ module "ecr" {
   project_name     = var.project_name
   repository_names = ["web", "catalog-api", "order-worker"]
 }
+
+
+resource "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1"
+  ]
+}
+
+
+data "aws_iam_policy_document" "github_oidc" {
+
+  statement {
+
+    effect = "Allow"
+
+    actions = [
+      "sts:AssumeRoleWithWebIdentity"
+    ]
+
+    principals {
+      type = "Federated"
+
+      identifiers = [
+        aws_iam_openid_connect_provider.github.arn
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+
+      values = [
+        "sts.amazonaws.com"
+      ]
+    }
+
+    condition {
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
+
+      values = [
+        "repo:your-org/your-repo:*"
+      ]
+    }
+  }
+}
+
+resource "aws_iam_role" "terraform_plan" {
+
+  name = "terraform-plan-role"
+
+  assume_role_policy = data.aws_iam_policy_document.github_oidc.json
+}
+
+resource "aws_iam_role_policy" "terraform_plan" {
+
+  role = aws_iam_role.terraform_plan.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+
+      {
+        Effect = "Allow"
+
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+
+        Resource = "*"
+      }
+    ]
+  })
+}
