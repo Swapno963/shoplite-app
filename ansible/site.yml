@@ -7,3 +7,4 @@
 - import_playbook: playbooks/05-install-cni.yml
 - import_playbook: playbooks/06-join-workers.yml
 - import_playbook: playbooks/07-verify-cluster.yml
+- import_playbook: playbooks/08-install-ebs-csi.yml

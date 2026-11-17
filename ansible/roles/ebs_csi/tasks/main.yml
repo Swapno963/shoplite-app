@@ -1,0 +1,102 @@
+---
+- name: Ensure Helm is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: helm_binary
+
+- name: Download Helm installer
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    dest: /tmp/get-helm-3
+    mode: "0700"
+  when: not helm_binary.stat.exists
+
+- name: Install Helm
+  ansible.builtin.command:
+    cmd: /tmp/get-helm-3
+    creates: /usr/local/bin/helm
+  when: not helm_binary.stat.exists
+
+- name: Patch Kubernetes node AWS identity
+  ansible.builtin.shell: |
+    set -euo pipefail
+    NODE="$(kubectl --kubeconfig={{ kubeconfig_path }} get nodes -o json | python3 -c "
+    import json, sys
+    ip = '{{ hostvars[item].ansible_host }}'
+    data = json.load(sys.stdin)
+    for node in data['items']:
+        addresses = node.get('status', {}).get('addresses', [])
+        if any(a.get('type') == 'InternalIP' and a.get('address') == ip for a in addresses):
+            print(node['metadata']['name'])
+            break
+    else:
+        raise SystemExit('no Kubernetes node with InternalIP ' + ip)
+    ")"
+    kubectl --kubeconfig={{ kubeconfig_path }} patch node "$NODE" --type=merge \
+      -p '{"spec":{"providerID":"aws:///{{ hostvars[item].aws_az }}/{{ hostvars[item].aws_instance_id }}"}}'
+    kubectl --kubeconfig={{ kubeconfig_path }} label node "$NODE" \
+      "topology.kubernetes.io/zone={{ hostvars[item].aws_az }}" \
+      "topology.kubernetes.io/region={{ hostvars[item].aws_region }}" \
+      --overwrite
+  args:
+    executable: /bin/bash
+  loop: "{{ groups['k8s_cluster'] }}"
+  register: node_aws_identity
+  changed_when: true
+
+- name: Add AWS EBS CSI Helm repository
+  ansible.builtin.command:
+    cmd: helm repo add {{ ebs_csi_helm_repo_name }} {{ ebs_csi_helm_repo_url }} --force-update
+  register: helm_repo_add
+  changed_when: "'has been added' in helm_repo_add.stdout"
+
+- name: Update Helm repositories
+  ansible.builtin.command:
+    cmd: helm repo update {{ ebs_csi_helm_repo_name }}
+  changed_when: true
+
+- name: Install AWS EBS CSI driver
+  ansible.builtin.command:
+    argv:
+      - helm
+      - upgrade
+      - --install
+      - "{{ ebs_csi_release_name }}"
+      - "{{ ebs_csi_chart }}"
+      - --namespace
+      - "{{ ebs_csi_namespace }}"
+      - --kubeconfig
+      - "{{ kubeconfig_path }}"
+      - --set
+      - node.tolerateAllTaints=true
+      - --wait
+      - --timeout
+      - 5m
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+- name: Copy gp3 StorageClass manifest
+  ansible.builtin.copy:
+    src: gp3-storageclass.yaml
+    dest: /tmp/gp3-storageclass.yaml
+    mode: "0644"
+
+- name: Apply gp3 StorageClass
+  ansible.builtin.command:
+    cmd: kubectl --kubeconfig={{ kubeconfig_path }} apply -f /tmp/gp3-storageclass.yaml
+  register: storageclass_apply
+  changed_when: "'configured' in storageclass_apply.stdout or 'created' in storageclass_apply.stdout"
+
+- name: Wait for EBS CSI controller
+  ansible.builtin.command:
+    cmd: >
+      kubectl --kubeconfig={{ kubeconfig_path }} rollout status
+      deployment/ebs-csi-controller -n {{ ebs_csi_namespace }} --timeout=180s
+  changed_when: false
+
+- name: Wait for EBS CSI node DaemonSet
+  ansible.builtin.command:
+    cmd: >
+      kubectl --kubeconfig={{ kubeconfig_path }} rollout status
+      daemonset/ebs-csi-node -n {{ ebs_csi_namespace }} --timeout=180s
+  changed_when: false

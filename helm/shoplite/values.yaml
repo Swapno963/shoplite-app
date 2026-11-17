@@ -72,6 +72,7 @@ postgres:
   database: shoplite
   username: shoplite
   storage: 20Gi
+  storageClass: gp3
   service:
     port: 5432
 

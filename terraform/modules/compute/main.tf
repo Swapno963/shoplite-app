@@ -49,8 +49,9 @@ resource "aws_instance" "control_plane" {
   }
 
   tags = {
-    Name = "${var.project_name}-control-plane"
-    Role = "control-plane"
+    Name                                          = "${var.project_name}-control-plane"
+    Role                                          = "control-plane"
+    "kubernetes.io/cluster/${var.project_name}" = "owned"
   }
 }
 
@@ -77,13 +78,8 @@ resource "aws_instance" "worker" {
   }
 
   tags = {
-    Name = "${var.project_name}-worker-${count.index + 1}"
-    Role = "worker"
+    Name                                          = "${var.project_name}-worker-${count.index + 1}"
+    Role                                          = "worker"
+    "kubernetes.io/cluster/${var.project_name}" = "owned"
   }
-}
-
-
-resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
-  role       = aws_iam_role.worker.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }

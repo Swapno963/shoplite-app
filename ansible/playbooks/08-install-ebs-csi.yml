@@ -1,0 +1,57 @@
+---
+- name: Collect EC2 identity for Kubernetes nodes
+  hosts: k8s_cluster
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Request IMDSv2 token
+      ansible.builtin.uri:
+        url: http://169.254.169.254/latest/api/token
+        method: PUT
+        headers:
+          X-aws-ec2-metadata-token-ttl-seconds: "21600"
+        return_content: true
+        status_code: 200
+      register: imds_token
+
+    - name: Read instance id
+      ansible.builtin.uri:
+        url: http://169.254.169.254/latest/meta-data/instance-id
+        headers:
+          X-aws-ec2-metadata-token: "{{ imds_token.content }}"
+        return_content: true
+        status_code: 200
+      register: imds_instance_id
+
+    - name: Read availability zone
+      ansible.builtin.uri:
+        url: http://169.254.169.254/latest/meta-data/placement/availability-zone
+        headers:
+          X-aws-ec2-metadata-token: "{{ imds_token.content }}"
+        return_content: true
+        status_code: 200
+      register: imds_az
+
+    - name: Read region
+      ansible.builtin.uri:
+        url: http://169.254.169.254/latest/meta-data/placement/region
+        headers:
+          X-aws-ec2-metadata-token: "{{ imds_token.content }}"
+        return_content: true
+        status_code: 200
+      register: imds_region
+
+    - name: Store AWS identity facts
+      ansible.builtin.set_fact:
+        aws_instance_id: "{{ imds_instance_id.content }}"
+        aws_az: "{{ imds_az.content }}"
+        aws_region: "{{ imds_region.content }}"
+
+- name: Install EBS CSI driver and gp3 StorageClass
+  hosts: control_plane
+  become: true
+  gather_facts: false
+
+  roles:
+    - ebs_csi

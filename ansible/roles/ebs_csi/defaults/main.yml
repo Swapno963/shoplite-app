@@ -1,0 +1,7 @@
+ebs_csi_helm_repo_name: aws-ebs-csi-driver
+ebs_csi_helm_repo_url: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+ebs_csi_release_name: aws-ebs-csi-driver
+ebs_csi_namespace: kube-system
+ebs_csi_chart: aws-ebs-csi-driver/aws-ebs-csi-driver
+kubeconfig_path: /etc/kubernetes/admin.conf
+storageclass_name: gp3

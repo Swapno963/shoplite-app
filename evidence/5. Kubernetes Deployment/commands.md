@@ -130,6 +130,29 @@ helm upgrade --install shoplite . \
   --dry-run
 
 
+## Install cluster storage (EBS CSI + gp3 StorageClass)
+# After terraform apply (AmazonEBSCSIDriverPolicy on the node role):
+ansible-playbook playbooks/08-install-ebs-csi.yml
+
+kubectl get csidriver
+kubectl get sc
+kubectl get pods -n kube-system | grep ebs
+
+
+## Recover a Pending postgres PVC (storageClassName is immutable)
+# Do this after CSI + gp3 exist. A PVC created with storageClassName: "" can never bind.
+kubectl delete pod postgres-0 -n shoplite
+kubectl delete pvc postgres-data-postgres-0 -n shoplite
+
+helm upgrade --install shoplite ./shoplite \
+  -f values-dev.yaml \
+  --namespace shoplite
+
+kubectl get pvc -n shoplite
+kubectl describe pvc postgres-data-postgres-0 -n shoplite
+kubectl get pod postgres-0 -n shoplite -o wide
+
+
 ## For development
 helm install shoplite ./shoplite \
 -f values-dev.yaml
