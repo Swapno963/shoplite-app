@@ -81,3 +81,9 @@ resource "aws_instance" "worker" {
     Role = "worker"
   }
 }
+
+
+resource "aws_iam_role_policy_attachment" "worker_ecr_readonly" {
+  role       = aws_iam_role.worker.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}

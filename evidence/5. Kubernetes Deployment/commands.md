@@ -1,8 +1,23 @@
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+ 
+chmod +x kubectl
+ 
+sudo mv kubectl /usr/local/bin/
+
+kubectl version --client
+
+
+
+
 ## Install HELM
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
 chmod 700 get_helm.sh
 ./get_helm.sh
 
+
+export KUBECONFIG=~/kubeconfig
+kubectl get nodes​‌
+kubectl get pods -A
 
 ## Build the dependency graph:
 helm dependency update .
@@ -10,8 +25,46 @@ helm dependency update .
 ## Lint the umbrella chart:
 helm lint .
 
-## Render templates to verify:
-helm template mystack . | head -100
+
+
+
+<!-- Verify -->
+kubectl config view --minify
+
+
+
+
+
+
+<!-- Run helm from basion -->
+scp -i ~/.ssh/id_ed25519 \
+-r helm \
+ubuntu@13.215.228.102:~/
+
+scp -i ~/.ssh/id_ed25519 \
+ansible/artifacts/kubeconfig \
+ubuntu@13.215.228.102:~/
+
+
+
+
+
+
+
+
+
+
+ssh -i ~/.ssh/id_ed25519 \
+  -L 6443:10.0.10.65:6443 \
+  ubuntu@13.215.228.102 \
+  -N
+
+
+
+
+
+
+
 
 
 

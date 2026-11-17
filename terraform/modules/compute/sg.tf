@@ -197,3 +197,26 @@ resource "aws_security_group_rule" "worker_egress" {
   security_group_id = aws_security_group.worker.id
   cidr_blocks       = ["0.0.0.0/0"]
 }
+
+
+resource "aws_security_group_rule" "cp_api_from_bastion" {
+  type                     = "ingress"
+  description              = "Kubernetes API from bastion"
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.control_plane.id
+  source_security_group_id = aws_security_group.bastion.id
+}
+
+
+
+resource "aws_security_group_rule" "bastion_api_egress" {
+  type              = "egress"
+  description       = "Kubernetes API access to private VPC"
+  from_port         = 6443
+  to_port           = 6443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.bastion.id
+  cidr_blocks       = [var.vpc_cidr]
+}

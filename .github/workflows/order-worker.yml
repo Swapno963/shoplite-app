@@ -34,8 +34,14 @@ jobs:
 
       - name: Push
         run: |
-          docker tag shoplite-web:${{ github.sha }} \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:${{ github.sha }}
+          docker tag shoplite-order-worker:${{ github.sha }} \
+          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:${{ github.sha }}
+
+          docker tag shoplite-order-worker:${{ github.sha }} \
+          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:stable
 
           docker push \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:${{ github.sha }}
+          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:${{ github.sha }}
+
+          docker push \
+          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:stable
