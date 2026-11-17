@@ -32,28 +32,31 @@ jobs:
           docker build -t order-worker:${SHA} ./application/order-worker
 
       - name: Scan catalog-api
-        uses: aquasecurity/trivy-action@v0.32.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: catalog-api:${{ env.SHA }}
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          version: v0.69.3
 
       - name: Scan web
-        uses: aquasecurity/trivy-action@v0.32.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: web:${{ env.SHA }}
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          version: v0.69.3
 
       - name: Scan order-worker
-        uses: aquasecurity/trivy-action@v0.32.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: order-worker:${{ env.SHA }}
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          version: v0.69.3
 
   grype-scan:
     name: Grype Scan

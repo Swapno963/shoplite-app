@@ -32,7 +32,8 @@
 
 - name: Download repository key
   get_url:
-    url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_minor_version }}/deb/Release.key"
+    url: "https://pkgs.k8s.io/core:/stable:/\
+      {{ kubernetes_minor_version }}/deb/Release.key"
     dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
     mode: "0644"
 
@@ -48,7 +49,9 @@
 
 - name: Add repository
   apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_minor_version }}/deb/ /"
+    repo: >
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg]
+      https://pkgs.k8s.io/core:/stable:/{{ kubernetes_minor_version }}/deb/ /
     filename: kubernetes
     state: present
 
