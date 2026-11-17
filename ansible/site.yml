@@ -1,8 +1,8 @@
 ---
 - import_playbook: playbooks/00-hardening.yml
-- import_playbook: playbooks/03-install-kubernetes.yml
 - import_playbook: playbooks/01-prepare-nodes.yml
 - import_playbook: playbooks/02-install-runtime.yml
+- import_playbook: playbooks/03-install-kubernetes.yml
 - import_playbook: playbooks/04-initialize-control-plane.yml
 - import_playbook: playbooks/05-install-cni.yml
 - import_playbook: playbooks/06-join-workers.yml

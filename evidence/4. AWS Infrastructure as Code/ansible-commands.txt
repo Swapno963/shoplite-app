@@ -6,7 +6,6 @@ sudo apt-add-repository --yes --update ppa:ansible/ansible
 sudo apt-get install -y ansible
 
 
-if error occures:
 sudo apt-get install -y locales
 sudo locale-gen en_US.UTF-8
 sudo update-locale LANG=en_US.UTF-8
@@ -22,5 +21,41 @@ ansible all -m ping
 ansible-playbook -i inventory site.yml --syntax-check
 
 
+
 ## Run the playbook: 
-ansible-playbook -i inventroy <path_to_your_playbook>/install_nginx.yml
+ansible-playbook -i inventory site.yml
+
+
+
+
+
+
+
+alb_dns_name = "shoplite-alb-1352422928.ap-southeast-1.elb.amazonaws.com"
+app_fqdn = ""
+bastion_instance_id = "i-07b0924fb17176f01"
+bastion_public_ip = "13.215.228.102"
+control_plane_instance_id = "i-0738df8914de1be28"
+control_plane_private_ip = "10.0.10.65"
+ecr_repository_urls = {
+  "catalog-api" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api"
+  "order-worker" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker"
+  "web" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web"
+}
+private_subnet_ids = [
+  "subnet-05daea119cef87051",
+  "subnet-0fb8cfee3c62441eb",
+]
+public_subnet_ids = [
+  "subnet-09d094a7bfc6bbf21",
+  "subnet-03ca0f4762c0d3648",
+]
+vpc_id = "vpc-0e89d0a17c38d9294"
+worker_instance_ids = [
+  "i-0f99c0264bfdb2e9e",
+  "i-0f18be665670318b3",
+]
+worker_private_ips = [
+  "10.0.10.249",
+  "10.0.11.229",
+]

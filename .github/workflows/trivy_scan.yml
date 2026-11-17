@@ -1,7 +1,15 @@
+name: Security Scan
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
   trivy-scan:
     name: Trivy Security Scan
     runs-on: ubuntu-latest
-    needs: build-images
 
     steps:
       - name: Checkout
@@ -13,25 +21,22 @@
 
       - name: Build catalog-api
         run: |
-          docker build -t catalog-api:${SHA} ./catalog-api
+          docker build -t catalog-api:${SHA} ./application/catalog-api
 
       - name: Build web
         run: |
-          docker build -t web:${SHA} ./web
+          docker build -t web:${SHA} ./application/web
 
       - name: Build order-worker
         run: |
-          docker build -t order-worker:${SHA} ./order-worker
-
-      - name: Install Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+          docker build -t order-worker:${SHA} ./application/order-worker
 
       - name: Scan catalog-api
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: catalog-api:${{ env.SHA }}
           severity: CRITICAL
-          exit-code: '1'
+          exit-code: "1"
           ignore-unfixed: true
 
       - name: Scan web
@@ -39,7 +44,7 @@
         with:
           image-ref: web:${{ env.SHA }}
           severity: CRITICAL
-          exit-code: '1'
+          exit-code: "1"
           ignore-unfixed: true
 
       - name: Scan order-worker
@@ -47,7 +52,7 @@
         with:
           image-ref: order-worker:${{ env.SHA }}
           severity: CRITICAL
-          exit-code: '1'
+          exit-code: "1"
           ignore-unfixed: true
 
   grype-scan:
@@ -70,7 +75,7 @@
 
       - name: Build catalog-api
         run: |
-          docker build -t catalog-api:${SHA} ./catalog-api
+          docker build -t catalog-api:${SHA} ./application/catalog-api
 
       - name: Scan catalog-api
         run: |
@@ -79,7 +84,7 @@
 
       - name: Build web
         run: |
-          docker build -t web:${SHA} ./web
+          docker build -t web:${SHA} ./application/web
 
       - name: Scan web
         run: |
@@ -88,7 +93,7 @@
 
       - name: Build order-worker
         run: |
-          docker build -t order-worker:${SHA} ./order-worker
+          docker build -t order-worker:${SHA} ./application/order-worker
 
       - name: Scan order-worker
         run: |
