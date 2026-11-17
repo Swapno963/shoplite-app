@@ -1,47 +1,47 @@
 # yamllint disable-file
 {{- if .Values.ingress.enabled }}
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-
 metadata:
-  name: shoplite
+  name: shoplite-web
   namespace: {{ .Values.namespace }}
-
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-
 spec:
-
   ingressClassName: {{ .Values.ingress.className }}
-
   rules:
-
     - host: {{ .Values.ingress.host }}
-
       http:
-
         paths:
-
           - path: /
             pathType: Prefix
-
             backend:
               service:
                 name: web
-
                 port:
                   number: 80
-
-          - path: /api
-            pathType: Prefix
-
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shoplite-api
+  namespace: {{ .Values.namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: catalog-api
-
                 port:
                   number: 8080
-
 {{- end }}
