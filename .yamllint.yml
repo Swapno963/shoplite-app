@@ -18,4 +18,4 @@ rules:
     allowed-values: ["true", "false", "yes", "no"]
   comments:
     min-spaces-from-content: 1
-  document-start: warning
+  document-start: disable
