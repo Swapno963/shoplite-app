@@ -42,7 +42,6 @@ jobs:
 
           docker push \
           051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:${{ github.sha }}
-          
-          
+
           docker push \
           051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:stable

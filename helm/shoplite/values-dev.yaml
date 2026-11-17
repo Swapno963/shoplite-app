@@ -31,8 +31,6 @@ postgres:
 
 applicationConfig:
 
-  LOG_LEVEL: DEBUG
-
   DJANGO_DEBUG: "true"
 
   ALLOWED_HOSTS: "*"
