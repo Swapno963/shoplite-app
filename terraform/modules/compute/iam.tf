@@ -38,3 +38,9 @@ resource "aws_iam_instance_profile" "bastion" {
   name = "${var.project_name}-bastion-profile"
   role = aws_iam_role.bastion.name
 }
+
+
+resource "aws_iam_role_policy_attachment" "ecr_readonly" {
+  role       = aws_iam_role.node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}

@@ -1,3 +1,19 @@
+<!-- Run helm from basion -->
+scp -i ~/.ssh/id_ed25519 \
+-r helm \
+ubuntu@13.229.98.10:~/
+
+scp -i ~/.ssh/id_ed25519 \
+ansible/artifacts/kubeconfig \
+ubuntu@13.229.98.10:~/
+
+
+
+<!-- Go to the basion -->
+ssh -i ~/.ssh/id_ed25519 ubuntu@13.229.98.10
+
+
+
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
  
 chmod +x kubectl
@@ -32,63 +48,13 @@ helm lint .
 kubectl config view --minify
 
 
-
-
-
-
-<!-- Run helm from basion -->
-scp -i ~/.ssh/id_ed25519 \
--r helm \
-ubuntu@13.215.228.102:~/
-
-scp -i ~/.ssh/id_ed25519 \
-ansible/artifacts/kubeconfig \
-ubuntu@13.215.228.102:~/
-
-
-
-
-
-
-
-
-
-
-ssh -i ~/.ssh/id_ed25519 \
-  -L 6443:10.0.10.65:6443 \
-  ubuntu@13.215.228.102 \
-  -N
-
-
-
-
-
-
-
-
-
-
-
 ## For local testing:
 export POSTGRES_PASSWORD='my-db-password'
 export DJANGO_SECRET_KEY='my-django-secret'
 export REDIS_PASSWORD='my-redis-secret'
 
-To run from host machine
-kubectl \
-  --kubeconfig=$HOME/.kube/shoplite-config \
-  get nodes
-
-or 
-mkdir -p ~/.kube
-
-cp admin.conf ~/.kube/config
-
-chmod 600 ~/.kube/config
-
 
 ## Then:
-kubectl create namespace shoplite --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic shoplite-secret -n shoplite \
   --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
@@ -98,70 +64,12 @@ kubectl create secret generic shoplite-secret -n shoplite \
 
 
 
-
-## Check kubeconfig existance in basion 
-ls -la ~/.kube/
-kubectl get nodes
-
-
-
-
-## Store kubeconfig Locally
-mkdir -p ~/.kube
-
-cp kubeconfig.yaml ~/.kube/config
-
-chmod 600 ~/.kube/config
-
-
-
-
-## Verify Cluster Access
-kubectl cluster-info
-
-
-## Render Templates Before Deploying(This shows exactly what Kubernetes will receive.)
-helm template shoplite .
-
-
-## Dry Run(Validate against the cluster):
 helm upgrade --install shoplite . \
+  -f values-prod.yaml \
   --namespace shoplite \
-  --dry-run
+  --create-namespace
 
 
-## Install cluster storage (EBS CSI + gp3 StorageClass)
-# After terraform apply (AmazonEBSCSIDriverPolicy on the node role):
-ansible-playbook playbooks/08-install-ebs-csi.yml
-
-kubectl get csidriver
-kubectl get sc
-kubectl get pods -n kube-system | grep ebs
-
-
-## Recover a Pending postgres PVC (storageClassName is immutable)
-# Do this after CSI + gp3 exist. A PVC created with storageClassName: "" can never bind.
-kubectl delete pod postgres-0 -n shoplite
-kubectl delete pvc postgres-data-postgres-0 -n shoplite
-
-helm upgrade --install shoplite ./shoplite \
-  -f values-dev.yaml \
-  --namespace shoplite
-
-kubectl get pvc -n shoplite
-kubectl describe pvc postgres-data-postgres-0 -n shoplite
-kubectl get pod postgres-0 -n shoplite -o wide
-
-
-## For development
-helm install shoplite ./shoplite \
--f values-dev.yaml
-
-
-
-## For peoduction:
-helm upgrade --install shoplite ./shoplite \
--f values-prod.yaml
 
 
 
