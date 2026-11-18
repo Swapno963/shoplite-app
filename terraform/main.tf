@@ -59,8 +59,6 @@ module "ecr" {
   project_name     = var.project_name
   repository_names = ["web", "catalog-api", "order-worker"]
 }
-
-
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
@@ -69,15 +67,13 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 
   thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1"
+    "1b511abead59c6ce207077c0bf0e0043b1382612"
   ]
 }
 
-
 data "aws_iam_policy_document" "github_oidc" {
-
   statement {
-
+    sid    = "GitHubActionsOIDC"
     effect = "Allow"
 
     actions = [
@@ -102,14 +98,19 @@ data "aws_iam_policy_document" "github_oidc" {
     }
 
     condition {
-      test     = "StringLike"
+      test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
 
       values = [
-        "repo:your-org/your-repo:*"
+        "repo:Swapno963/shoplite-app:ref:refs/heads/main"
       ]
     }
   }
+}
+
+resource "aws_iam_role" "github_actions" {
+  name               = "github-actions-role"
+  assume_role_policy = data.aws_iam_policy_document.github_oidc.json
 }
 
 resource "aws_iam_role" "terraform_plan" {
