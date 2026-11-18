@@ -18,25 +18,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Debug OIDC Claims
-        uses: github/actions-oidc-debugger@main
-      - name: Debug GitHub OIDC context
+      - name: Debug Role
         run: |
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Repository ID: ${{ github.repository_id }}"
-          echo "Owner ID: ${{ github.repository_owner_id }}"
-          echo "Branch: $GITHUB_REF"
-
-      - name: Print GitHub Context
-        run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Repository ID: ${{ github.repository_id }}"
-      - name: Debug Context
-        run: |
-          echo "Repository=${{ github.repository }}"
-          echo "Repository ID=${{ github.repository_id }}"
-          echo "Owner=${{ github.repository_owner }}"
-          echo "Ref=${{ github.ref }}"
+          echo "AWS Role ARN: ${{ secrets.AWS_ROLE_ARN }}"
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
