@@ -42,10 +42,11 @@ module "compute" {
   control_plane_instance_type = var.control_plane_instance_type
   worker_instance_type        = var.worker_instance_type
   key_name                    = var.key_name
+  worker_count                = var.worker_count
 }
 
 resource "aws_lb_target_group_attachment" "workers" {
-  count = length(module.compute.worker_instance_ids)
+  count = var.worker_count
 
   target_group_arn = module.alb.target_group_arn
   target_id        = module.compute.worker_instance_ids[count.index]

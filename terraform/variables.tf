@@ -57,3 +57,10 @@ variable "worker_instance_type" {
   type    = string
   default = "t3.medium"
 }
+
+variable "worker_count" {
+  description = "Number of worker EC2 instances"
+  type        = number
+  default     = 2
+}
+

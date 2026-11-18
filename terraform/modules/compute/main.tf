@@ -49,15 +49,14 @@ resource "aws_instance" "control_plane" {
   }
 
   tags = {
-    Name                                          = "${var.project_name}-control-plane"
-    Role                                          = "control-plane"
+    Name                                        = "${var.project_name}-control-plane"
+    Role                                        = "control-plane"
     "kubernetes.io/cluster/${var.project_name}" = "owned"
   }
 }
 
 resource "aws_instance" "worker" {
-  count = 2
-
+  count                       = var.worker_count
   ami                         = local.ami_id
   instance_type               = var.worker_instance_type
   subnet_id                   = var.private_subnet_ids[count.index]
@@ -78,8 +77,8 @@ resource "aws_instance" "worker" {
   }
 
   tags = {
-    Name                                          = "${var.project_name}-worker-${count.index + 1}"
-    Role                                          = "worker"
+    Name                                        = "${var.project_name}-worker-${count.index + 1}"
+    Role                                        = "worker"
     "kubernetes.io/cluster/${var.project_name}" = "owned"
   }
 }
