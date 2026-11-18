@@ -59,6 +59,7 @@ module "ecr" {
   project_name     = var.project_name
   repository_names = ["web", "catalog-api", "order-worker"]
 }
+
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
@@ -98,14 +99,20 @@ data "aws_iam_policy_document" "github_oidc" {
     }
 
     condition {
-    test     = "StringEquals"
-    variable = "token.actions.githubusercontent.com:sub"
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
 
-    values = [
-      "repo:Swapno963@Swapno963/shoplite-app@1454159317:ref:refs/heads/main"
-    ]
+      values = [
+        "repo:Swapno963@100410169/shoplite-app@1454159317:*"
+      ]
+    }
   }
-  }
+}
+
+
+resource "aws_iam_role_policy_attachment" "ecr_power_user" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
 
 resource "aws_iam_role" "github_actions" {
