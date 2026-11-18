@@ -98,13 +98,13 @@ data "aws_iam_policy_document" "github_oidc" {
     }
 
     condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:sub"
+    test     = "StringEquals"
+    variable = "token.actions.githubusercontent.com:sub"
 
-      values = [
-        "repo:Swapno963/shoplite-app:ref:refs/heads/main"
-      ]
-    }
+    values = [
+      "repo:Swapno963@Swapno963/shoplite-app@1454159317:ref:refs/heads/main"
+    ]
+  }
   }
 }
 
