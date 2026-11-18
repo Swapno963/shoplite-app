@@ -11,29 +11,29 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = [var.admin_cidr]
   }
 
-  egress {
-    description = "SSH to private nodes"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
+  # egress {
+  #   description = "SSH to private nodes"
+  #   from_port   = 22
+  #   to_port     = 22
+  #   protocol    = "tcp"
+  #   cidr_blocks = [var.vpc_cidr]
+  # }
 
-  egress {
-    description = "HTTPS for SSM and packages"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # egress {
+  #   description = "HTTPS for SSM and packages"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
-  egress {
-    description = "HTTP for package mirrors"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # egress {
+  #   description = "HTTP for package mirrors"
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   tags = {
     Name = "${var.project_name}-bastion-sg"
@@ -60,25 +60,7 @@ resource "aws_security_group" "worker" {
   }
 }
 
-resource "aws_security_group_rule" "cp_ssh_from_bastion" {
-  type                     = "ingress"
-  description              = "SSH from bastion"
-  from_port                = 22
-  to_port                  = 22
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.control_plane.id
-  source_security_group_id = aws_security_group.bastion.id
-}
 
-resource "aws_security_group_rule" "worker_ssh_from_bastion" {
-  type                     = "ingress"
-  description              = "SSH from bastion"
-  from_port                = 22
-  to_port                  = 22
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.worker.id
-  source_security_group_id = aws_security_group.bastion.id
-}
 
 resource "aws_security_group_rule" "cp_api_from_workers" {
   type                     = "ingress"
@@ -199,17 +181,85 @@ resource "aws_security_group_rule" "worker_egress" {
 }
 
 
-resource "aws_security_group_rule" "cp_api_from_bastion" {
-  type                     = "ingress"
-  description              = "Kubernetes API from bastion"
-  from_port                = 6443
-  to_port                  = 6443
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.control_plane.id
-  source_security_group_id = aws_security_group.bastion.id
+
+
+
+# resource "aws_security_group_rule" "cp_ssh_from_bastion" {
+#   type                     = "ingress"
+#   description              = "SSH from bastion"
+#   from_port                = 22
+#   to_port                  = 22
+#   protocol                 = "tcp"
+#   security_group_id        = aws_security_group.control_plane.id
+#   source_security_group_id = aws_security_group.bastion.id
+# }
+
+# resource "aws_security_group_rule" "worker_ssh_from_bastion" {
+#   type                     = "ingress"
+#   description              = "SSH from bastion"
+#   from_port                = 22
+#   to_port                  = 22
+#   protocol                 = "tcp"
+#   security_group_id        = aws_security_group.worker.id
+#   source_security_group_id = aws_security_group.bastion.id
+# }
+
+# resource "aws_security_group_rule" "cp_api_from_bastion" {
+#   type                     = "ingress"
+#   description              = "Kubernetes API from bastion"
+#   from_port                = 6443
+#   to_port                  = 6443
+#   protocol                 = "tcp"
+#   security_group_id        = aws_security_group.control_plane.id
+#   source_security_group_id = aws_security_group.bastion.id
+# }
+
+
+
+# resource "aws_security_group_rule" "bastion_api_egress" {
+#   type              = "egress"
+#   description       = "Kubernetes API access to private VPC"
+#   from_port         = 6443
+#   to_port           = 6443
+#   protocol          = "tcp"
+#   security_group_id = aws_security_group.bastion.id
+#   cidr_blocks       = [var.vpc_cidr]
+# }
+
+
+
+
+#  new added code 
+
+resource "aws_security_group_rule" "bastion_ssh_nodes" {
+  type              = "egress"
+  description       = "SSH to private nodes"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  security_group_id = aws_security_group.bastion.id
+  cidr_blocks       = [var.vpc_cidr]
 }
 
+resource "aws_security_group_rule" "bastion_https" {
+  type              = "egress"
+  description       = "HTTPS for SSM and packages"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.bastion.id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
 
+resource "aws_security_group_rule" "bastion_http" {
+  type              = "egress"
+  description       = "HTTP for package mirrors"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.bastion.id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
 
 resource "aws_security_group_rule" "bastion_api_egress" {
   type              = "egress"
