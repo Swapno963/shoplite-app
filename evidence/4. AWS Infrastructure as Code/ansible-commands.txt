@@ -28,7 +28,10 @@ ansible-playbook -i inventory site.yml
 
 
 
-
+ssh-keyscan -H 13.229.85.84 >> ~/.ssh/known_hosts
+ssh-keyscan -H 10.0.10.205 >> ~/.ssh/known_hosts
+ssh-keyscan -H 10.0.10.39 >> ~/.ssh/known_hosts
+ssh-keyscan -H 10.0.11.6 >> ~/.ssh/known_hosts
 
 
 alb_dns_name = "shoplite-alb-1352422928.ap-southeast-1.elb.amazonaws.com"
