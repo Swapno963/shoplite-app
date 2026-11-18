@@ -37,3 +37,32 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars   # set admin_cidr
 cd bootstrap && terraform init && terraform apply
 cd .. && terraform init -backend-config=backend.hcl && terraform apply
+
+
+
+
+
+some import
+
+terraform import \
+  aws_iam_openid_connect_provider.github \
+  arn:aws:iam::051826735078:oidc-provider/token.actions.githubusercontent.com
+
+
+terraform import \
+  module.compute.aws_iam_role.node \
+  shoplite-node-role
+
+
+terraform import \
+  module.compute.aws_iam_role.bastion \
+  shoplite-bastion-role
+
+terraform import \
+  module.compute.aws_iam_instance_profile.node \
+  shoplite-node-profile
+
+
+terraform import \
+  module.compute.aws_iam_instance_profile.bastion \
+  shoplite-bastion-profile
