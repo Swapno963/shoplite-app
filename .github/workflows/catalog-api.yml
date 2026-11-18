@@ -1,10 +1,10 @@
-name: Build Web
+
+name: Build Catalog API
 
 on:
   push:
     branches:
       - main
-
     paths:
       - 'application/catalog-api/**'
 
@@ -17,31 +17,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-southeast-1
 
-      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build
+      - name: Build Docker image
         run: |
           docker build \
-            -t shoplite-web:${{ github.sha }} \
-            application/web
+            -t shoplite-catalog-api:${{ github.sha }} \
+            application/catalog-api
 
-      - name: Push
+      - name: Tag and Push Docker image
         run: |
-          docker tag shoplite-web:${{ github.sha }} \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:${{ github.sha }}
+          ECR_REPOSITORY=051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api
 
-          docker tag shoplite-web:${{ github.sha }} \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:stable
+          # Tag with Git commit SHA
+          docker tag shoplite-catalog-api:${{ github.sha }} \
+            $ECR_REPOSITORY:${{ github.sha }}
 
-          docker push \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:${{ github.sha }}
+          # Tag with stable
+          docker tag shoplite-catalog-api:${{ github.sha }} \
+            $ECR_REPOSITORY:stable
 
-          docker push \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web:stable
+          # Push both tags
+          docker push $ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REPOSITORY:stable

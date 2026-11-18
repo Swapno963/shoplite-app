@@ -1,10 +1,10 @@
-name: Build Web
+
+name: Build Order Worker
 
 on:
   push:
     branches:
       - main
-
     paths:
       - 'application/order-worker/**'
 
@@ -17,31 +17,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-southeast-1
 
-      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build
+      - name: Build Docker image
         run: |
           docker build \
-            -t shoplite-web:${{ github.sha }} \
-            application/web
+            -t shoplite-order-worker:${{ github.sha }} \
+            application/order-worker
 
-      - name: Push
+      - name: Tag and Push Docker image
         run: |
+          ECR_REPOSITORY=051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker
+
+          # Tag with Git commit SHA
           docker tag shoplite-order-worker:${{ github.sha }} \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:${{ github.sha }}
+            $ECR_REPOSITORY:${{ github.sha }}
 
+          # Tag with stable
           docker tag shoplite-order-worker:${{ github.sha }} \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:stable
+            $ECR_REPOSITORY:stable
 
-          docker push \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:${{ github.sha }}
-
-          docker push \
-          051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker:stable
+          # Push both tags
+          docker push $ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REPOSITORY:stable
