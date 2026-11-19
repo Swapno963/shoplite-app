@@ -96,11 +96,14 @@ kubectl get pods -n shoplite -w
 
 
 
+<!-- Before applying, it's a good practice to see what will change: -->
+helm diff upgrade shoplite . \
+  -f values-prod.yaml \
+  --namespace shoplite
 
 
-
-
-
+<!-- If you don't have the plugin: -->
+helm plugin install https://github.com/databus23/helm-diff
 
 
 
