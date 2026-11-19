@@ -5,6 +5,8 @@ kind: Service
 metadata:
   name: catalog-api
   namespace: {{ .Values.namespace }}
+  labels:
+    app: catalog-api
 
 spec:
   type: ClusterIP

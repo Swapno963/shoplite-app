@@ -3,6 +3,8 @@ import logging
 import os
 from datetime import datetime, timezone
 
+from tracing import current_trace_id
+
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -11,7 +13,7 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "service": os.getenv("SERVICE_NAME", "order-worker"),
             "message": record.getMessage(),
-            "trace_id": getattr(record, "trace_id", "-"),
+            "trace_id": getattr(record, "trace_id", None) or current_trace_id(),
         }
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
@@ -25,5 +27,3 @@ def configure_logging() -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(os.getenv("LOG_LEVEL", "INFO"))
-
-# test 2

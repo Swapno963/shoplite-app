@@ -1,0 +1,15 @@
+config:
+  clients:
+    - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+
+  snippets:
+    extraRelabelConfigs: []
+    extraPipelineStages: |
+      - json:
+          expressions:
+            trace_id: trace_id
+            level: level
+            service: service
+      - labels:
+          level:
+          service:

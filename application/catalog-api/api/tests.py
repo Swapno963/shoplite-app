@@ -82,3 +82,15 @@ class CatalogApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 500)
+
+    def test_metrics_exposes_required_http_series(self):
+        self.client.get("/products")
+        response = self.client.get("/metrics")
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn("http_requests_total", body)
+        self.assertIn("http_request_duration_seconds", body)
+        self.assertIn("orders_created_total", body)
+        self.assertIn("order_queue_depth", body)
+        self.assertIn('route="/products"', body)
+        self.assertIn("order_queue_depth", body)

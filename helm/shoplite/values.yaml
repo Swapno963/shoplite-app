@@ -34,7 +34,7 @@ catalogApi:
     tag: latest
   service:
     port: 8080
-    targetPort: 8080
+    targetPort: 8000
   resources:
     requests:
       cpu: 250m
@@ -51,6 +51,7 @@ orderWorker:
   image:
     repository: 051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker
     tag: latest
+  metricsPort: 8080
   terminationGracePeriodSeconds: 300
   resources:
     requests:
@@ -100,6 +101,8 @@ applicationConfig:
   CHAOS_MEMORY_LEAK: "false"
   CHAOS_SLOW_DB: "false"
   VITE_API_URL: "/api"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
 
 # Created outside Helm:
 #   kubectl create secret generic shoplite-secret -n shoplite \

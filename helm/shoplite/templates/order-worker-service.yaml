@@ -1,0 +1,24 @@
+# yamllint disable-file
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: order-worker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: order-worker
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: order-worker
+
+  ports:
+    - name: metrics
+
+      port: {{ .Values.orderWorker.metricsPort }}
+
+      targetPort: metrics
+
+      protocol: TCP

@@ -28,3 +28,6 @@ data:
   CHAOS_SLOW_DB: "{{ .Values.applicationConfig.CHAOS_SLOW_DB }}"
 
   VITE_API_URL: "{{ .Values.applicationConfig.VITE_API_URL }}"
+
+  OTEL_EXPORTER_OTLP_ENDPOINT: "{{ .Values.applicationConfig.OTEL_EXPORTER_OTLP_ENDPOINT }}"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "{{ .Values.applicationConfig.OTEL_EXPORTER_OTLP_PROTOCOL }}"

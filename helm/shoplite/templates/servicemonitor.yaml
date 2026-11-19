@@ -1,0 +1,50 @@
+# yamllint disable-file
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: catalog-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: catalog-api
+    release: kube-prometheus-stack
+
+spec:
+  selector:
+    matchLabels:
+      app: catalog-api
+
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.namespace }}
+
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: order-worker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: order-worker
+    release: kube-prometheus-stack
+
+spec:
+  selector:
+    matchLabels:
+      app: order-worker
+
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.namespace }}
+
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

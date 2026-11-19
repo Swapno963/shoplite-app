@@ -12,6 +12,9 @@ sudo update-locale LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
 
 
+## Add basion on known host
+ssh-keyscan -H 13.213.44.151 >> ~/.ssh/known_hosts
+
 
 
 ## check if ansible can ssh into the remote servers: 
@@ -28,37 +31,35 @@ ansible-playbook -i inventory site.yml
 
 
 
-ssh-keyscan -H 13.229.85.84 >> ~/.ssh/known_hosts
-ssh-keyscan -H 10.0.10.205 >> ~/.ssh/known_hosts
-ssh-keyscan -H 10.0.10.39 >> ~/.ssh/known_hosts
-ssh-keyscan -H 10.0.11.6 >> ~/.ssh/known_hosts
 
 
-alb_dns_name = "shoplite-alb-1352422928.ap-southeast-1.elb.amazonaws.com"
+
+alb_dns_name = "shoplite-alb-192242708.ap-southeast-1.elb.amazonaws.com"
 app_fqdn = ""
-bastion_instance_id = "i-07b0924fb17176f01"
-bastion_public_ip = "13.215.228.102"
-control_plane_instance_id = "i-0738df8914de1be28"
-control_plane_private_ip = "10.0.10.65"
+bastion_instance_id = "i-06f2ebcfd208df735"
+bastion_public_ip = "13.213.44.151"
+control_plane_instance_id = "i-083293e1373d0651e"
+control_plane_private_ip = "10.0.10.163"
 ecr_repository_urls = {
   "catalog-api" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api"
   "order-worker" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker"
   "web" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web"
 }
 private_subnet_ids = [
-  "subnet-05daea119cef87051",
-  "subnet-0fb8cfee3c62441eb",
+  "subnet-0802c172d8537e734",
+  "subnet-010e03927bd6b59a2",
 ]
 public_subnet_ids = [
-  "subnet-09d094a7bfc6bbf21",
-  "subnet-03ca0f4762c0d3648",
+  "subnet-0a7c40c2d77682ecc",
+  "subnet-0c0766211587047d5",
 ]
-vpc_id = "vpc-0e89d0a17c38d9294"
+vpc_id = "vpc-0fd08666625ddcfd6"
 worker_instance_ids = [
-  "i-0f99c0264bfdb2e9e",
-  "i-0f18be665670318b3",
+  "i-0dd94b915b103e336",
+  "i-00087ff11a9826bc6",
 ]
 worker_private_ips = [
-  "10.0.10.249",
-  "10.0.11.229",
+  "10.0.10.31",
+  "10.0.11.240",
 ]
+swapno@swapno:~/Documents/Projects/shoplite-app/terraform$ 

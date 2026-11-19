@@ -1,3 +1,7 @@
+import os
+
+os.environ["OTEL_SDK_DISABLED"] = "true"
+
 from catalog.settings import *  # noqa: F403
 
 DATABASES = {
@@ -10,3 +14,4 @@ DATABASES = {
 REDIS_URL = "redis://localhost:6379/15"
 CHAOS_LATENCY_MS = 0
 CHAOS_ERROR_RATE = 0.0
+OTEL_SDK_DISABLED = "true"

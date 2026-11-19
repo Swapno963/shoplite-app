@@ -32,6 +32,18 @@ spec:
 
           imagePullPolicy: {{ .Values.imagePullPolicy }}
 
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.orderWorker.metricsPort }}
+
+          env:
+            - name: SERVICE_NAME
+              value: order-worker
+            - name: OTEL_SERVICE_NAME
+              value: order-worker
+            - name: METRICS_PORT
+              value: "{{ .Values.orderWorker.metricsPort }}"
+
           envFrom:
 
             - configMapRef:

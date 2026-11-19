@@ -10,8 +10,22 @@ import psycopg
 import redis
 
 from logging_utils import configure_logging
+from metrics import (
+    ORDER_PROCESSING_SECONDS,
+    ORDER_QUEUE_DEPTH,
+    ORDERS_PROCESSED_TOTAL,
+    start_metrics_server,
+)
+from tracing import (
+    attach_queue_context,
+    current_trace_id,
+    detach_queue_context,
+    setup_telemetry,
+    start_process_span,
+)
 
 configure_logging()
+setup_telemetry()
 logger = logging.getLogger("order-worker")
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -30,6 +44,7 @@ CHAOS_MEMORY_LEAK = os.getenv("CHAOS_MEMORY_LEAK", "false").lower() in ("1", "tr
 CHAOS_SLOW_DB = os.getenv("CHAOS_SLOW_DB", "false").lower() in ("1", "true", "yes")
 PROCESS_MIN_SECONDS = float(os.getenv("PROCESS_MIN_SECONDS", "1"))
 PROCESS_MAX_SECONDS = float(os.getenv("PROCESS_MAX_SECONDS", "2"))
+METRICS_PORT = int(os.getenv("METRICS_PORT", "8080"))
 
 shutdown_requested = False
 leaked_orders: list[dict] = []
@@ -99,17 +114,19 @@ def decrement_stock(conn, product_id: int, quantity: int, order_id: int) -> int:
 
 def process_order(conn, payload: dict) -> None:
     order_id = payload["order_id"]
-    extra = {"trace_id": str(order_id)}
+    extra = {"trace_id": current_trace_id()}
     logger.info("processing order %s", order_id, extra=extra)
 
     row = fetch_order(conn, order_id)
     if row is None:
         logger.warning("order %s not found", order_id, extra=extra)
+        ORDERS_PROCESSED_TOTAL.labels(result="not_found").inc()
         return
 
     _id, product_id, quantity, status, _stock = row
     if status != "PENDING":
         logger.info("skipping order %s with status %s", order_id, status, extra=extra)
+        ORDERS_PROCESSED_TOTAL.labels(result="skipped").inc()
         return
 
     update_order(conn, order_id, "PROCESSING")
@@ -120,10 +137,12 @@ def process_order(conn, payload: dict) -> None:
     if remaining < 0:
         update_order(conn, order_id, "FAILED", completed_at)
         logger.warning("order %s failed: insufficient stock", order_id, extra=extra)
+        ORDERS_PROCESSED_TOTAL.labels(result="failed").inc()
         final_status = "FAILED"
     else:
         update_order(conn, order_id, "COMPLETED", completed_at)
         logger.info("order %s completed", order_id, extra=extra)
+        ORDERS_PROCESSED_TOTAL.labels(result="success").inc()
         final_status = "COMPLETED"
 
     if CHAOS_MEMORY_LEAK:
@@ -144,10 +163,18 @@ def wait_for_dependencies(redis_client) -> None:
             time.sleep(2)
 
 
+def refresh_queue_depth(redis_client) -> None:
+    try:
+        ORDER_QUEUE_DEPTH.set(redis_client.llen(ORDERS_QUEUE))
+    except Exception:
+        logger.exception("failed to read order queue depth")
+
+
 def main() -> None:
     signal.signal(signal.SIGTERM, handle_signal)
     signal.signal(signal.SIGINT, handle_signal)
 
+    start_metrics_server(METRICS_PORT)
     redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
     wait_for_dependencies(redis_client)
     logger.info("order-worker started; listening on %s", ORDERS_QUEUE)
@@ -155,15 +182,26 @@ def main() -> None:
     conn = connect_db()
     try:
         while not shutdown_requested:
+            refresh_queue_depth(redis_client)
             item = redis_client.blpop(ORDERS_QUEUE, timeout=1)
             if item is None:
                 continue
             _queue, raw = item
+            token = None
             try:
                 payload = json.loads(raw)
-                process_order(conn, payload)
+                token = attach_queue_context(payload)
+                started = time.perf_counter()
+                with start_process_span(payload["order_id"]):
+                    process_order(conn, payload)
+                ORDER_PROCESSING_SECONDS.observe(time.perf_counter() - started)
             except Exception:
                 logger.exception("failed to process message: %s", raw)
+                ORDERS_PROCESSED_TOTAL.labels(result="error").inc()
+            finally:
+                if token is not None:
+                    detach_queue_context(token)
+            refresh_queue_depth(redis_client)
     finally:
         conn.close()
         logger.info("order-worker stopped")

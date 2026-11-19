@@ -1,0 +1,1 @@
+kubeadm join 10.0.10.163:6443 --token cck3dr.3hvd7lcxn67b1ese --discovery-token-ca-cert-hash sha256:62f5e3a1da45fa787921f0c0f8b1126d0b5c509e0313874ea8e434dec6b310d7  --cri-socket=unix:///run/containerd/containerd.sock

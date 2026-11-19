@@ -38,6 +38,12 @@ spec:
           ports:
             - containerPort: {{ .Values.catalogApi.service.targetPort }}
 
+          env:
+            - name: SERVICE_NAME
+              value: catalog-api
+            - name: OTEL_SERVICE_NAME
+              value: catalog-api
+
           envFrom:
             - configMapRef:
                 name: shoplite-config
