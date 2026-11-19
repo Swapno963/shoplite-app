@@ -27,3 +27,5 @@ def configure_logging() -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(os.getenv("LOG_LEVEL", "INFO"))
+
+# 1

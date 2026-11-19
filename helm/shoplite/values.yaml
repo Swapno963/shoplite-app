@@ -2,6 +2,10 @@ namespace: shoplite
 
 imagePullPolicy: IfNotPresent
 
+metrics:
+  serviceMonitor:
+    enabled: true
+
 serviceAccount:
   create: true
   name: shoplite

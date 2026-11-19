@@ -1,16 +1,16 @@
 <!-- Run helm from basion -->
 scp -i ~/.ssh/id_ed25519 \
 -r helm \
-ubuntu@47.129.219.8:~/
+ubuntu@13.213.44.151:~/
 
 scp -i ~/.ssh/id_ed25519 \
 ansible/artifacts/kubeconfig \
-ubuntu@47.129.219.8:~/
+ubuntu@13.213.44.151:~/
 
 
 
 <!-- Go to the basion -->
-ssh -i ~/.ssh/id_ed25519 ubuntu@47.129.219.8
+ssh -i ~/.ssh/id_ed25519 ubuntu@13.213.44.151
 
 
 
