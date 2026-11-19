@@ -1,16 +1,16 @@
 <!-- Run helm from basion -->
 scp -i ~/.ssh/id_ed25519 \
 -r helm \
-ubuntu@13.229.98.10:~/
+ubuntu@47.129.219.8:~/
 
 scp -i ~/.ssh/id_ed25519 \
 ansible/artifacts/kubeconfig \
-ubuntu@13.229.98.10:~/
+ubuntu@47.129.219.8:~/
 
 
 
 <!-- Go to the basion -->
-ssh -i ~/.ssh/id_ed25519 ubuntu@13.229.98.10
+ssh -i ~/.ssh/id_ed25519 ubuntu@47.129.219.8
 
 
 
@@ -55,6 +55,7 @@ export REDIS_PASSWORD='my-redis-secret'
 
 
 ## Then:
+kubectl create namespace shoplite
 
 kubectl create secret generic shoplite-secret -n shoplite \
   --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
@@ -66,10 +67,64 @@ kubectl create secret generic shoplite-secret -n shoplite \
 
 helm upgrade --install shoplite . \
   -f values-prod.yaml \
-  --namespace shoplite \
-  --create-namespace
+  --namespace shoplite 
 
 
+
+Verify:
+kubectl get all -n shoplite
+
+kubectl describe pod catalog-api-fb44bb7bc-74fvz -n shoplite
+
+
+
+<!-- 2. Restart deployments -->
+kubectl rollout restart deployment catalog-api -n shoplite
+
+kubectl rollout restart deployment web -n shoplite
+
+kubectl rollout restart deployment order-worker -n shoplite
+
+
+
+<!-- 3. Watch pods -->
+kubectl get pods -n shoplite -w
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+aws sts get-caller-identity
+aws ecr get-login-password --region ap-southeast-1 | head
+
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+-H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+curl -s \
+-H "X-aws-ec2-metadata-token: $TOKEN" \
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+
+sudo journalctl -u kubelet -n 100 --no-pager
+
+
+curl -I https://051826735078.dkr.ecr.ap-southeast-1.amazonaws.com
+
+
+
+
+<!-- Check if kubelet has ECR credential provider configured -->
+ps -ef | grep kubelet
 
 
 
