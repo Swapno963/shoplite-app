@@ -1,3 +1,10 @@
+serviceAccount:
+  create: true
+  name: shoplite
+
+  imagePullSecrets:
+    - name: ecr-secret
+
 ingress:
   host: shoplite.example.com
 

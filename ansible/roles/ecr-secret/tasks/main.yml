@@ -1,0 +1,36 @@
+---
+
+- name: Install unzip
+  apt:
+    name: unzip
+    update_cache: yes
+    state: present
+
+- name: Download AWS CLI
+  get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+    dest: /tmp/awscliv2.zip
+
+- name: Unarchive AWS CLI
+  unarchive:
+    src: /tmp/awscliv2.zip
+    dest: /tmp
+    remote_src: yes
+
+- name: Install AWS CLI
+  command: /tmp/aws/install --update
+  
+- name: Get ECR login password
+  shell: |
+    aws ecr get-login-password --region ap-southeast-1
+  register: ecr_password
+  changed_when: false
+
+- name: Create or update ECR secret
+  shell: |
+    kubectl create secret docker-registry ecr-secret \
+      --docker-server=051826735078.dkr.ecr.ap-southeast-1.amazonaws.com \
+      --docker-username=AWS \
+      --docker-password='{{ ecr_password.stdout }}' \
+      -n shoplite \
+      --dry-run=client -o yaml | kubectl apply -f -
