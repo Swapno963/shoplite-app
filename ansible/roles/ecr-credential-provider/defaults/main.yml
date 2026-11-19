@@ -1,0 +1,13 @@
+
+---
+aws_region: ap-southeast-1
+
+# Match your Kubernetes minor version.
+# For Kubernetes 1.35, use the corresponding 1.35 release.
+ecr_credential_provider_version: v1.35.1
+
+ecr_credential_provider_bin_dir: /opt/kubernetes/bin
+
+ecr_credential_provider_config_dir: /etc/kubernetes/credential-provider
+
+ecr_credential_provider_config_file: /etc/kubernetes/credential-provider/ecr-credential-provider.yaml

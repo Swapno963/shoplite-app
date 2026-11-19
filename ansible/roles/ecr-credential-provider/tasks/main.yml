@@ -1,40 +1,109 @@
+
 ---
-- name: Create credential provider directory
-  become: true
-  file:
-    path: /etc/kubernetes/image-credential-provider
+- name: Detect architecture for ECR provider
+  ansible.builtin.set_fact:
+    ecr_provider_arch: >-
+      {{ ansible_architecture
+         | regex_replace('^x86_64$', 'amd64')
+         | regex_replace('^aarch64$', 'arm64') }}
+
+- name: Validate supported architecture
+  ansible.builtin.assert:
+    that:
+      - ecr_provider_arch in ['amd64', 'arm64']
+    fail_msg: "Unsupported architecture: {{ ansible_architecture }}"
+
+- name: Create ECR credential provider binary directory
+  ansible.builtin.file:
+    path: "{{ ecr_credential_provider_bin_dir }}"
     state: directory
+    owner: root
+    group: root
     mode: '0755'
 
 - name: Download ECR credential provider
-  become: true
-  get_url:
-    url: https://amazon-eks.s3.us-west-2.amazonaws.com/1.31.0/2024-09-13/bin/linux/amd64/ecr-credential-provider
-    dest: /usr/local/bin/ecr-credential-provider
+  ansible.builtin.get_url:
+    url: "https://artifacts.k8s.io/binaries/cloud-provider-aws/{{ ecr_credential_provider_version }}/linux/{{ ecr_provider_arch }}/ecr-credential-provider-linux-{{ ecr_provider_arch }}"
+    dest: "{{ ecr_credential_provider_bin_dir }}/ecr-credential-provider"
+    owner: root
+    group: root
+    mode: '0755'
+    timeout: 120
+
+- name: Create credential provider configuration directory
+  ansible.builtin.file:
+    path: "{{ ecr_credential_provider_config_dir }}"
+    state: directory
+    owner: root
+    group: root
     mode: '0755'
 
-- name: Create credential provider config
-  become: true
-  template:
-    src: credential-provider-config.yaml.j2
-    dest: /etc/kubernetes/image-credential-provider/config.yaml
+- name: Configure ECR credential provider
+  ansible.builtin.copy:
+    dest: "{{ ecr_credential_provider_config_file }}"
+    owner: root
+    group: root
     mode: '0644'
-  notify:
-    - restart kubelet
-
-- name: Create kubelet override directory
-  become: true
-  file:
-    path: /etc/systemd/system/kubelet.service.d
-    state: directory
-
-- name: Configure kubelet credential provider
-  become: true
-  copy:
-    dest: /etc/systemd/system/kubelet.service.d/30-ecr-provider.conf
     content: |
-      [Service]
-      Environment="KUBELET_EXTRA_ARGS=--image-credential-provider-config=/etc/kubernetes/image-credential-provider/config.yaml --image-credential-provider-bin-dir=/usr/local/bin"
-  notify:
-    - reload systemd
-    - restart kubelet
+      apiVersion: kubelet.config.k8s.io/v1
+      kind: CredentialProviderConfig
+
+      providers:
+        - name: ecr-credential-provider
+
+          matchImages:
+            - "*.dkr.ecr.*.amazonaws.com"
+            - "*.dkr.ecr.*.amazonaws.com.cn"
+
+          defaultCacheDuration: "11h"
+
+          apiVersion: credentialprovider.kubelet.k8s.io/v1
+
+          env:
+            - name: AWS_REGION
+              value: "{{ aws_region }}"
+
+- name: Read existing kubelet extra arguments
+  ansible.builtin.shell: |
+    if [ -f /etc/default/kubelet ]; then
+      . /etc/default/kubelet
+    fi
+    printf '%s' "${KUBELET_EXTRA_ARGS:-}"
+  args:
+    executable: /bin/bash
+  register: existing_kubelet_args
+  changed_when: false
+
+- name: Merge ECR provider flags with existing kubelet arguments
+  ansible.builtin.set_fact:
+    kubelet_extra_args_final: >-
+      {{
+        (
+          existing_kubelet_args.stdout
+          | regex_replace('--image-credential-provider-config=\\S+', '')
+          | regex_replace('--image-credential-provider-bin-dir=\\S+', '')
+          | trim
+          ~ ' --image-credential-provider-config='
+          ~ ecr_credential_provider_config_file
+          ~ ' --image-credential-provider-bin-dir='
+          ~ ecr_credential_provider_bin_dir
+        ) | trim
+      }}
+
+- name: Configure kubelet extra arguments
+  ansible.builtin.lineinfile:
+    path: /etc/default/kubelet
+    regexp: '^KUBELET_EXTRA_ARGS='
+    line: 'KUBELET_EXTRA_ARGS="{{ kubelet_extra_args_final }}"'
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart kubelet
+
+- name: Verify ECR credential provider executable
+  ansible.builtin.command:
+    cmd: "{{ ecr_credential_provider_bin_dir }}/ecr-credential-provider --help"
+  register: ecr_provider_check
+  changed_when: false
+  failed_when: ecr_provider_check.rc != 0

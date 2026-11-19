@@ -1,0 +1,11 @@
+
+---
+- name: Configure ECR authentication on Kubernetes workers
+  hosts: workers
+  become: true
+
+  # Restart one worker at a time.
+  serial: 1
+
+  roles:
+    - ecr-credential-provider
