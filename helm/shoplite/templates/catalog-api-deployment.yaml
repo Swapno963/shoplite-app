@@ -54,12 +54,18 @@ spec:
           resources:
 {{ toYaml .Values.catalogApi.resources | indent 12 }}
 
+          startupProbe:
+            httpGet:
+              path: {{ .Values.catalogApi.probes.livenessPath }}
+              port: {{ .Values.catalogApi.service.targetPort }}
+            failureThreshold: 36
+            periodSeconds: 5
+            timeoutSeconds: 3
+
           livenessProbe:
             httpGet:
               path: {{ .Values.catalogApi.probes.livenessPath }}
               port: {{ .Values.catalogApi.service.targetPort }}
-
-            initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
 
@@ -67,8 +73,6 @@ spec:
             httpGet:
               path: {{ .Values.catalogApi.probes.readinessPath }}
               port: {{ .Values.catalogApi.service.targetPort }}
-
-            initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
 

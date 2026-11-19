@@ -32,7 +32,14 @@ def setup_telemetry(service_name: str | None = None) -> None:
         resource = Resource.create({"service.name": name})
         provider = TracerProvider(resource=resource)
         if endpoint:
-            provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+            provider.add_span_processor(
+                BatchSpanProcessor(
+                    OTLPSpanExporter(timeout=3),
+                    schedule_delay_millis=5000,
+                    export_timeout_millis=3000,
+                    max_export_batch_size=64,
+                )
+            )
         trace.set_tracer_provider(provider)
 
         DjangoInstrumentor().instrument()
