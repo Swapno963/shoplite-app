@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 #  1
 @api_view(["GET"])
-def list_products(request):
+def list_products(request):2
     products = Product.objects.all()
     return Response(ProductSerializer(products, many=True).data)
 
