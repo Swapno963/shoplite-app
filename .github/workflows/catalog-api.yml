@@ -4,7 +4,7 @@ name: Build Catalog API
 on:
   push:
     branches:
-      - long-term-ecr-permission-solution
+      - monitoring
     paths:
       - 'application/catalog-api/**'
 

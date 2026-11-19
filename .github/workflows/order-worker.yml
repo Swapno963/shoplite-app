@@ -4,7 +4,7 @@ name: Build Order Worker
 on:
   push:
     branches:
-      - long-term-ecr-permission-solution
+      - monitoring
     paths:
       - 'application/order-worker/**'
 

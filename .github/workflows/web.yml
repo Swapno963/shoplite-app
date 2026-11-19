@@ -3,7 +3,7 @@ name: Build Web
 on:
   push:
     branches:
-      - long-term-ecr-permission-solution
+      - monitoring
 
     paths:
       - 'application/web/**'
