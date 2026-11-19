@@ -1,16 +1,16 @@
 <!-- Run helm from basion -->
 scp -i ~/.ssh/id_ed25519 \
 -r helm \
-ubuntu@13.229.98.10:~/
+ubuntu@47.129.219.8:~/
 
 scp -i ~/.ssh/id_ed25519 \
 ansible/artifacts/kubeconfig \
-ubuntu@13.229.98.10:~/
+ubuntu@47.129.219.8:~/
 
 
 
 <!-- Go to the basion -->
-ssh -i ~/.ssh/id_ed25519 ubuntu@13.229.98.10
+ssh -i ~/.ssh/id_ed25519 ubuntu@47.129.219.8
 
 
 
@@ -55,6 +55,7 @@ export REDIS_PASSWORD='my-redis-secret'
 
 
 ## Then:
+kubectl create namespace shoplite
 
 kubectl create secret generic shoplite-secret -n shoplite \
   --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
@@ -66,8 +67,7 @@ kubectl create secret generic shoplite-secret -n shoplite \
 
 helm upgrade --install shoplite . \
   -f values-prod.yaml \
-  --namespace shoplite \
-  --create-namespace
+  --namespace shoplite 
 
 
 
