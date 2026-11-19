@@ -2,9 +2,9 @@
 ---
 aws_region: ap-southeast-1
 
-# Match your Kubernetes minor version.
-# For Kubernetes 1.35, use the corresponding 1.35 release.
-ecr_credential_provider_version: v1.35.1
+# Must exist on artifacts.k8s.io. Many 1.32–1.35 tags 404.
+# This cluster installs Kubernetes 1.37 (see kubernetes_packages defaults).
+ecr_credential_provider_version: v1.37.0
 
 ecr_credential_provider_bin_dir: /opt/kubernetes/bin
 

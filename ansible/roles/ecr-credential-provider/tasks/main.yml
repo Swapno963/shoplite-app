@@ -3,7 +3,7 @@
 - name: Detect architecture for ECR provider
   ansible.builtin.set_fact:
     ecr_provider_arch: >-
-      {{ ansible_architecture
+      {{ ansible_facts['architecture']
          | regex_replace('^x86_64$', 'amd64')
          | regex_replace('^aarch64$', 'arm64') }}
 
@@ -11,7 +11,7 @@
   ansible.builtin.assert:
     that:
       - ecr_provider_arch in ['amd64', 'arm64']
-    fail_msg: "Unsupported architecture: {{ ansible_architecture }}"
+    fail_msg: "Unsupported architecture: {{ ansible_facts['architecture'] }}"
 
 - name: Create ECR credential provider binary directory
   ansible.builtin.file:
