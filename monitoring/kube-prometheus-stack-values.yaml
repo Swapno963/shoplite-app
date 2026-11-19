@@ -75,7 +75,8 @@ grafana:
     storageClassName: gp3
     size: 5Gi
   service:
-    type: ClusterIP
+    type: NodePort
+    nodePort: 30300
   sidecar:
     dashboards:
       enabled: true

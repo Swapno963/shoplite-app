@@ -1,10 +1,10 @@
 ## Copy charts to the bastion (from your laptop)
 
-scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@13.213.44.151:~/
+scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@54.179.61.106:~/
 
 scp -i ~/.ssh/id_ed25519 \
   ansible/artifacts/kubeconfig \
-  ubuntu@13.213.44.151:~/kubeconfig
+  ubuntu@54.179.61.106:~/kubeconfig
 
 
 ## 1. Terraform — IAM + subnet tags (from your laptop)
@@ -19,7 +19,7 @@ echo "$VPC_ID"
 
 ## On the bastion
 
-ssh -i ~/.ssh/id_ed25519 ubuntu@13.213.44.151
+ssh -i ~/.ssh/id_ed25519 ubuntu@54.179.61.106
 
 export KUBECONFIG=/home/ubuntu/kubeconfig
 
@@ -51,14 +51,17 @@ kubectl get ingressclass alb
 
 ## 4. Remove the old per-chart monitoring installs (if they exist)
 
-helm uninstall promtail -n monitoring
-helm uninstall tempo -n monitoring
-helm uninstall loki -n monitoring
-helm uninstall kube-prometheus-stack -n monitoring
+# "release: not found" is OK on a fresh cluster. PrometheusRule CRDs
+# do not exist until the umbrella is installed — ignore that error too.
+
+helm uninstall promtail -n monitoring || true
+helm uninstall tempo -n monitoring || true
+helm uninstall loki -n monitoring || true
+helm uninstall kube-prometheus-stack -n monitoring || true
 
 kubectl delete ingress grafana -n monitoring --ignore-not-found
 kubectl delete configmap grafana-dashboard-shoplite-golden-signals -n monitoring --ignore-not-found
-kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found
+kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found || true
 
 
 ## 5. Slack webhook
@@ -68,7 +71,7 @@ kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found
 #
 #   scp -i ~/.ssh/id_ed25519 \
 #     helm/observability/values-slack.yaml \
-#     ubuntu@13.213.44.151:~/helm/observability/values-slack.yaml
+#     ubuntu@54.179.61.106:~/helm/observability/values-slack.yaml
 #
 # Template: helm/observability/values-slack.yaml.example
 # Channel: #shoplite-alerts (must match the Incoming Webhook's channel)
@@ -89,8 +92,22 @@ kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found
 #   --set grafanaInboundCidrs=1.2.3.4/32
 
 cd /home/ubuntu/helm/observability
+
+# Confirm Chart.yaml pins grafana/tempo 1.21.1 (1.21.2 was never published).
+grep -A1 'name: tempo' Chart.yaml
+
+# Do NOT add charts/*.tgz to .helmignore. helm upgrade --install . applies
+# .helmignore and will then report the four subcharts as missing.
+
+helm repo update
 helm dependency update
 
+ls charts/
+# expect:
+#   kube-prometheus-stack-77.12.0.tgz  loki-6.29.0.tgz
+#   promtail-6.17.1.tgz                tempo-1.21.1.tgz
+
+# First install pulls images and creates PVCs; --wait can take most of 20m.
 helm upgrade --install observability . \
   --namespace monitoring \
   --create-namespace \
@@ -104,7 +121,10 @@ kubectl get secret -n monitoring alertmanager-kube-prometheus-stack-alertmanager
 
 
 kubectl get pods -n monitoring
-kubectl get svc -n monitoring
+kubectl get svc -n monitoring grafana
+# Grafana Service must be NodePort 30300 (ALB instance targets cannot use ClusterIP).
+# Do not use 30080 — that NodePort is ShopLite ingress-nginx.
+
 kubectl get ingress -n monitoring grafana
 kubectl get prometheusrule -n monitoring
 
@@ -138,3 +158,36 @@ curl -s http://127.0.0.1:8080/metrics | grep -E 'http_requests_total|http_reques
 
 kubectl -n shoplite port-forward svc/order-worker 8081:8080
 curl -s http://127.0.0.1:8081/metrics | grep -E 'orders_processed_total|order_processing_seconds|order_queue_depth'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- to get graphana address -->
+After Grafana’s Ingress has an ADDRESS:
+
+kubectl get ingress -n monitoring grafana \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+
+
+<!-- If the command prints nothing, ADDRESS is still empty (ClusterIP issue, or the ALB is still creating). Then: -->
+kubectl get ingress -n monitoring grafana
+kubectl describe ingress -n monitoring grafana

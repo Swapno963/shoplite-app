@@ -13,7 +13,8 @@ serviceAccount:
 ingress:
   enabled: true
   className: nginx
-  host: shoplite.local
+  # Empty = match any Host (ALB DNS + target-group health checks).
+  host: ""
 
 web:
   replicaCount: 2
