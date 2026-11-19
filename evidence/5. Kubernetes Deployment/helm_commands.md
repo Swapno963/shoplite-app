@@ -70,6 +70,31 @@ helm upgrade --install shoplite . \
   --namespace shoplite 
 
 
+## Ingress (ALB → NodePort 30080 → nginx)
+
+# The AWS ALB forwards to worker NodePort 30080.
+# ShopLite Services are ClusterIP, so ingress-nginx must own that port.
+# Do not curl 127.0.0.1:30080 on the bastion — NodePort is on the workers.
+
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --values ~/helm/ingress-nginx-values.yaml \
+  --wait
+
+kubectl get svc -n ingress-nginx
+kubectl get ingress -n shoplite
+
+# From the bastion, hit a worker private IP (not localhost):
+# curl -I http://<worker-private-ip>:30080/
+
+# Browser (no custom domain required):
+# http://shoplite-alb-192242708.ap-southeast-1.elb.amazonaws.com/
+
+
 
 Verify:
 kubectl get all -n shoplite

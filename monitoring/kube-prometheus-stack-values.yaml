@@ -68,7 +68,7 @@ grafana:
     size: 5Gi
   service:
     type: NodePort
-    nodePort: 30080
+    nodePort: 30081
   sidecar:
     dashboards:
       enabled: true
