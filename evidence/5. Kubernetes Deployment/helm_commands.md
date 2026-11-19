@@ -74,7 +74,15 @@ helm upgrade --install shoplite . \
 Verify:
 kubectl get all -n shoplite
 
-kubectl describe pod catalog-api-fb44bb7bc-74fvz -n shoplite
+<!-- kubernetes logs  -->
+kubectl describe pod catalog-api-6bf48f7d87-8bv2q -n shoplite
+kubectl describe pod order-worker-747bcf75dc-4kmlq -n shoplite
+
+
+<!-- see container log -->
+kubectl logs -n shoplite deploy/catalog-api --tail=100
+kubectl logs -n shoplite deploy/order-worker --tail=100
+kubectl logs -n shoplite deploy/web --tail=50
 
 
 

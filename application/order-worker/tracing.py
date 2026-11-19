@@ -1,14 +1,7 @@
 import os
 
 from opentelemetry import context, trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
-from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.propagate import extract
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 _initialized = False
 
@@ -21,15 +14,29 @@ def setup_telemetry() -> None:
         _initialized = True
         return
 
-    name = os.getenv("OTEL_SERVICE_NAME") or os.getenv("SERVICE_NAME", "order-worker")
-    resource = Resource.create({"service.name": name})
-    provider = TracerProvider(resource=resource)
-    if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip():
-        provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
-    trace.set_tracer_provider(provider)
-    PsycopgInstrumentor().instrument()
-    RedisInstrumentor().instrument()
-    LoggingInstrumentor().instrument(set_logging_format=False)
+    try:
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter,
+        )
+        from opentelemetry.instrumentation.logging import LoggingInstrumentor
+        from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
+        from opentelemetry.instrumentation.redis import RedisInstrumentor
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        name = os.getenv("OTEL_SERVICE_NAME") or os.getenv("SERVICE_NAME", "order-worker")
+        resource = Resource.create({"service.name": name})
+        provider = TracerProvider(resource=resource)
+        if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip():
+            provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+        trace.set_tracer_provider(provider)
+        PsycopgInstrumentor().instrument()
+        RedisInstrumentor().instrument()
+        LoggingInstrumentor().instrument(set_logging_format=False)
+    except Exception:
+        _initialized = True
+        return
     _initialized = True
 
 
