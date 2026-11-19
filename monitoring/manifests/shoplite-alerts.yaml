@@ -26,7 +26,7 @@ spec:
             description: >-
               ShopLite HTTP 5xx rate is {{ $value | humanizePercentage }}
               over the last 5 minutes.
-            runbook_url: https://github.com/Swapno963/shoplite-app/blob/main/monitoring/runbooks/high-error-rate.md
+            runbook_url: https://github.com/Swapno963/shoplite-app/blob/long-term-ecr-permission-solution/monitoring/runbooks/high-error-rate.md
 
         - alert: HighLatency
           expr: |
@@ -41,7 +41,7 @@ spec:
             summary: p95 HTTP latency is above 1s
             description: >-
               ShopLite p95 request latency is {{ $value | humanizeDuration }}.
-            runbook_url: https://github.com/Swapno963/shoplite-app/blob/main/monitoring/runbooks/high-latency.md
+            runbook_url: https://github.com/Swapno963/shoplite-app/blob/long-term-ecr-permission-solution/monitoring/runbooks/high-latency.md
 
         - alert: QueueBacklog
           expr: max(order_queue_depth) > 50
@@ -52,7 +52,7 @@ spec:
             summary: Order queue depth is above 50
             description: >-
               Redis order queue depth is {{ $value }} pending messages.
-            runbook_url: https://github.com/Swapno963/shoplite-app/blob/main/monitoring/runbooks/queue-backlog.md
+            runbook_url: https://github.com/Swapno963/shoplite-app/blob/long-term-ecr-permission-solution/monitoring/runbooks/queue-backlog.md
 
         - alert: PodCrashLooping
           expr: |
@@ -64,7 +64,7 @@ spec:
             description: >-
               Container {{ $labels.container }} in pod {{ $labels.pod }}
               restarted {{ $value }} times in the last 10 minutes.
-            runbook_url: https://github.com/Swapno963/shoplite-app/blob/main/monitoring/runbooks/pod-crash-looping.md
+            runbook_url: https://github.com/Swapno963/shoplite-app/blob/long-term-ecr-permission-solution/monitoring/runbooks/pod-crash-looping.md
 
         - alert: NodeDiskFilling
           expr: |
@@ -83,4 +83,4 @@ spec:
             description: >-
               Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }}
               is {{ $value | humanizePercentage }} full.
-            runbook_url: https://github.com/Swapno963/shoplite-app/blob/main/monitoring/runbooks/node-disk-filling.md
+            runbook_url: https://github.com/Swapno963/shoplite-app/blob/long-term-ecr-permission-solution/monitoring/runbooks/node-disk-filling.md

@@ -116,6 +116,8 @@ chart-lock.yaml
 # -----------------------------------------------------------------------------
 # Monitoring
 # -----------------------------------------------------------------------------
+helm/observability/values-slack.yaml
+monitoring/values-slack.yaml
 monitoring/data/
 prometheus-data/
 grafana-data/

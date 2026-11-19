@@ -20,6 +20,7 @@ singleBinary:
   replicas: 1
   persistence:
     enabled: true
+    storageClass: gp3
     size: 10Gi
 
 read:
@@ -37,4 +38,13 @@ gateway:
 chunksCache:
   enabled: false
 resultsCache:
+  enabled: false
+
+lokiCanary:
+  enabled: false
+
+test:
+  enabled: false
+
+minio:
   enabled: false

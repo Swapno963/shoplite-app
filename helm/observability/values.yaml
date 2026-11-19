@@ -1,0 +1,209 @@
+# Replace with your public IP /32 before exposing Grafana.
+grafanaInboundCidrs: "0.0.0.0/0"
+
+# ACM later:
+# grafanaCertificateArn: arn:aws:acm:ap-southeast-1:ACCOUNT:certificate/ID
+
+kube-prometheus-stack:
+  fullnameOverride: kube-prometheus-stack
+
+  prometheus:
+    service:
+      type: ClusterIP
+    prometheusSpec:
+      serviceMonitorSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorNamespaceSelector: {}
+      ruleNamespaceSelector: {}
+      enableFeatures:
+        - exemplar-storage
+      retention: 15d
+      scrapeInterval: 15s
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp3
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+
+  alertmanager:
+    service:
+      type: ClusterIP
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ["alertname", "namespace", "severity"]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 3h
+        receiver: slack-notifications
+        routes:
+          - matchers:
+              - severity = critical
+            receiver: slack-notifications
+            continue: true
+          - matchers:
+              - severity = warning
+            receiver: slack-notifications
+      receivers:
+        - name: slack-notifications
+          slack_configs:
+            - api_url: "<YOUR_SLACK_WEBHOOK_URL>"
+              channel: "#shoplite-alerts"
+              send_resolved: true
+              title: "{{ .Status | toUpper }} - {{ .CommonLabels.alertname }}"
+              text: |-
+                {{ range .Alerts }}
+                *Alert:* {{ .Annotations.summary }}
+                *Description:* {{ .Annotations.description }}
+                *Severity:* {{ .Labels.severity }}
+                *Runbook:* {{ .Annotations.runbook_url }}
+                {{ end }}
+
+  grafana:
+    fullnameOverride: grafana
+    adminPassword: admin
+    grafana.ini:
+      users:
+        allow_sign_up: false
+      auth.anonymous:
+        enabled: false
+      security:
+        disable_gravatar: true
+    persistence:
+      enabled: true
+      storageClassName: gp3
+      size: 5Gi
+    service:
+      type: ClusterIP
+    ingress:
+      enabled: false
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        searchNamespace: ALL
+    additionalDataSources:
+      - name: Loki
+        uid: loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        jsonData:
+          derivedFields:
+            - name: TraceID
+              matcherRegex: '"trace_id":"([a-f0-9]+)"'
+              datasourceUid: tempo
+              url: "$${__value.raw}"
+              urlDisplayLabel: View Trace
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: loki
+            spanStartTimeShift: "-1h"
+            spanEndTimeShift: "1h"
+            filterByTraceID: true
+          tracesToMetrics:
+            datasourceUid: prometheus
+          serviceMap:
+            datasourceUid: prometheus
+          nodeGraph:
+            enabled: true
+          lokiSearch:
+            datasourceUid: loki
+
+  nodeExporter:
+    enabled: true
+
+  kubeStateMetrics:
+    enabled: true
+
+loki:
+  fullnameOverride: loki
+  deploymentMode: SingleBinary
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    schemaConfig:
+      configs:
+        - from: "2024-04-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    storage:
+      type: filesystem
+  singleBinary:
+    replicas: 1
+    persistence:
+      enabled: true
+      storageClass: gp3
+      size: 10Gi
+  read:
+    replicas: 0
+  backend:
+    replicas: 0
+  write:
+    replicas: 0
+  gateway:
+    enabled: true
+    basicAuth:
+      enabled: false
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  lokiCanary:
+    enabled: false
+  test:
+    enabled: false
+  minio:
+    enabled: false
+
+promtail:
+  config:
+    clients:
+      - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+    snippets:
+      extraRelabelConfigs: []
+      extraPipelineStages: |
+        - json:
+            expressions:
+              trace_id: trace_id
+              level: level
+              service: service
+        - labels:
+            level:
+            service:
+
+tempo:
+  fullnameOverride: tempo
+  tempo:
+    reportingEnabled: false
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /var/tempo/traces
+  persistence:
+    enabled: true
+    storageClassName: gp3
+    size: 10Gi

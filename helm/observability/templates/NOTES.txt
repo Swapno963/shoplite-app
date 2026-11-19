@@ -1,0 +1,8 @@
+Grafana is on an AWS ALB (HTTP). Prometheus and Alertmanager are ClusterIP only.
+
+  kubectl get ingress -n {{ .Release.Namespace }} grafana
+
+Login: admin / (grafana.adminPassword in values)
+Dashboard: ShopLite — Golden Signals
+
+Restrict access with --set grafanaInboundCidrs=YOUR.IP/32

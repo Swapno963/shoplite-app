@@ -1,0 +1,18 @@
+clusterName: shoplite
+region: ap-southeast-1
+
+# Set at install from: terraform output -raw vpc_id
+vpcId: ""
+
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+  annotations: {}
+
+enableServiceMutatorWebhook: false
+enableShield: false
+enableWaf: false
+enableWafv2: false
+
+ingressClass: alb
+createIngressClassResource: true

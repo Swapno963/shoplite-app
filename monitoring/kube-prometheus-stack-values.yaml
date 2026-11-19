@@ -1,7 +1,9 @@
+# Kept in sync with helm/observability/values.yaml (kube-prometheus-stack key).
+# Prefer installing the umbrella chart.
+
 prometheus:
   service:
-    type: NodePort
-    nodePort: 30090
+    type: ClusterIP
 
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
@@ -19,6 +21,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
+          storageClassName: gp3
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -26,8 +29,7 @@ prometheus:
 
 alertmanager:
   service:
-    type: NodePort
-    nodePort: 30093
+    type: ClusterIP
 
   config:
     global:
@@ -63,12 +65,17 @@ alertmanager:
 
 grafana:
   adminPassword: admin
+  grafana.ini:
+    users:
+      allow_sign_up: false
+    auth.anonymous:
+      enabled: false
   persistence:
     enabled: true
+    storageClassName: gp3
     size: 5Gi
   service:
-    type: NodePort
-    nodePort: 30081
+    type: ClusterIP
   sidecar:
     dashboards:
       enabled: true

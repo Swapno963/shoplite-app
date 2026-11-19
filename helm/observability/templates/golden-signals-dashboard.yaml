@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-shoplite-golden-signals
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  shoplite-golden-signals.json: |-
+{{ .Files.Get "files/shoplite-golden-signals.json" | indent 4 }}
