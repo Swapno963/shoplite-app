@@ -78,7 +78,8 @@ data "aws_iam_policy_document" "github_oidc" {
     effect = "Allow"
 
     actions = [
-      "sts:AssumeRoleWithWebIdentity"
+      "sts:AssumeRoleWithWebIdentity",
+      "sts:TagSession"
     ]
 
     principals {
