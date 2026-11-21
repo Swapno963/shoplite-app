@@ -1,10 +1,10 @@
 ## Copy charts to the bastion (from your laptop)
 
-scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@18.139.227.140:~/
+scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@54.251.166.226:~/
 
 scp -i ~/.ssh/id_ed25519 \
   ansible/artifacts/kubeconfig \
-  ubuntu@18.139.227.140:~/kubeconfig
+  ubuntu@54.251.166.226:~/kubeconfig
 
 
 ## 1. Terraform — IAM + subnet tags (from your laptop)
@@ -19,7 +19,7 @@ echo "$VPC_ID"
 
 ## On the bastion
 
-ssh -i ~/.ssh/id_ed25519 ubuntu@18.139.227.140
+ssh -i ~/.ssh/id_ed25519 ubuntu@54.251.166.226
 
 export KUBECONFIG=/home/ubuntu/kubeconfig
 
@@ -71,7 +71,7 @@ kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found |
 #
 #   scp -i ~/.ssh/id_ed25519 \
 #     helm/observability/values-slack.yaml \
-#     ubuntu@18.139.227.140:~/helm/observability/values-slack.yaml
+#     ubuntu@54.251.166.226:~/helm/observability/values-slack.yaml
 #
 # Template: helm/observability/values-slack.yaml.example
 # Channel: #shoplite-alerts (must match the Incoming Webhook's channel)
@@ -169,7 +169,7 @@ kubectl annotate ingress grafana -n monitoring --overwrite \
 #   curl -4 -sI http://<grafana-alb-hostname>/login
 #
 # Workaround (laptop → bastion → Grafana Service), from your laptop:
-#   ssh -i ~/.ssh/id_ed25519 -L 3000:127.0.0.1:3000 ubuntu@18.139.227.140
+#   ssh -i ~/.ssh/id_ed25519 -L 3000:127.0.0.1:3000 ubuntu@54.251.166.226
 # then on the bastion:
 #   kubectl -n monitoring port-forward svc/grafana 3000:80
 # Browser: http://127.0.0.1:3000/login
