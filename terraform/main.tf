@@ -139,7 +139,7 @@ data "aws_iam_policy_document" "terraform_plan_state" {
       "s3:ListBucket"
     ]
     resources = [
-      "arn:aws:s3:::shoplite-tfstate-535d4a18"
+      "arn:aws:s3:::shoplite-tfstate-f3b50621"
     ]
   }
 
@@ -152,7 +152,7 @@ data "aws_iam_policy_document" "terraform_plan_state" {
       "s3:DeleteObject"
     ]
     resources = [
-      "arn:aws:s3:::shoplite-tfstate-535d4a18/*"
+      "arn:aws:s3:::shoplite-tfstate-f3b50621/*"
     ]
   }
 

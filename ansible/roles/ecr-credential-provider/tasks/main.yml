@@ -1,4 +1,3 @@
-
 ---
 - name: Detect architecture for ECR provider
   ansible.builtin.set_fact:
@@ -13,6 +12,18 @@
       - ecr_provider_arch in ['amd64', 'arm64']
     fail_msg: "Unsupported architecture: {{ ansible_facts['architecture'] }}"
 
+- name: Set ECR credential provider download URL
+  ansible.builtin.set_fact:
+    ecr_credential_provider_download_url: >-
+      {{
+        'https://artifacts.k8s.io/binaries/cloud-provider-aws/'
+        ~ ecr_credential_provider_version
+        ~ '/linux/'
+        ~ ecr_provider_arch
+        ~ '/ecr-credential-provider-linux-'
+        ~ ecr_provider_arch
+      }}
+
 - name: Create ECR credential provider binary directory
   ansible.builtin.file:
     path: "{{ ecr_credential_provider_bin_dir }}"
@@ -23,7 +34,7 @@
 
 - name: Download ECR credential provider
   ansible.builtin.get_url:
-    url: "https://artifacts.k8s.io/binaries/cloud-provider-aws/{{ ecr_credential_provider_version }}/linux/{{ ecr_provider_arch }}/ecr-credential-provider-linux-{{ ecr_provider_arch }}"
+    url: "{{ ecr_credential_provider_download_url }}"
     dest: "{{ ecr_credential_provider_bin_dir }}/ecr-credential-provider"
     owner: root
     group: root

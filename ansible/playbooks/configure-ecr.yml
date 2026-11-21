@@ -1,4 +1,3 @@
-
 ---
 - name: Configure ECR authentication on Kubernetes workers
   hosts: workers

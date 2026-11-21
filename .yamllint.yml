@@ -5,6 +5,7 @@ extends: default
 # CI already runs `helm lint` / `helm template` on the chart.
 ignore: |
   /helm/shoplite/templates/
+  /helm/observability/templates/
 
 rules:
   braces:

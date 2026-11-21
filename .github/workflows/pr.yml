@@ -172,6 +172,8 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      DEFAULT_TF_PLAN_ROLE_ARN: arn:aws:iam::051826735078:role/terraform-plan-role
 
     defaults:
       run:
@@ -199,7 +201,7 @@ jobs:
         if: steps.filter.outputs.terraform == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_TF_PLAN_ROLE_ARN != '' && secrets.AWS_TF_PLAN_ROLE_ARN || 'arn:aws:iam::051826735078:role/terraform-plan-role' }}
+          role-to-assume: ${{ secrets.AWS_TF_PLAN_ROLE_ARN || env.DEFAULT_TF_PLAN_ROLE_ARN }}
           aws-region: ap-southeast-1
 
       - name: Terraform Init

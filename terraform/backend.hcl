@@ -1,5 +1,5 @@
-bucket         = "shoplite-tfstate-535d4a18"
+bucket         = "shoplite-tfstate-f3b50621"
 key            = "infra/terraform.tfstate"
 region         = "ap-southeast-1"
-dynamodb_table = "shoplite-terraform-locks"
+use_lockfile = true
 encrypt        = true
