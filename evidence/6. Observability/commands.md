@@ -24,7 +24,7 @@ ssh -i ~/.ssh/id_ed25519 ubuntu@54.251.166.226
 export KUBECONFIG=/home/ubuntu/kubeconfig
 
 # Paste the VPC id from terraform output:
-export VPC_ID='vpc-04613ee77f5690a53'
+export VPC_ID='vpc-0e8890ec3b3165c90'
 
 kubectl get nodes
 
@@ -48,20 +48,6 @@ helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-contro
 kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
 kubectl get ingressclass alb
 
-
-## 4. Remove the old per-chart monitoring installs (if they exist)
-
-# "release: not found" is OK on a fresh cluster. PrometheusRule CRDs
-# do not exist until the umbrella is installed — ignore that error too.
-
-helm uninstall promtail -n monitoring || true
-helm uninstall tempo -n monitoring || true
-helm uninstall loki -n monitoring || true
-helm uninstall kube-prometheus-stack -n monitoring || true
-
-kubectl delete ingress grafana -n monitoring --ignore-not-found
-kubectl delete configmap grafana-dashboard-shoplite-golden-signals -n monitoring --ignore-not-found
-kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found || true
 
 
 ## 5. Slack webhook
@@ -144,85 +130,3 @@ kubectl get servicemonitor -n shoplite
 
 kubectl get ingress -n monitoring grafana -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 
-# Must be HTTP (there is no 443 listener / ACM). Chrome HTTPS-only mode
-# times out on 443 (SG drops; looks like ERR_CONNECTION_TIMED_OUT).
-#   http://<that-hostname>/login
-# Login: admin / admin
-# Dashboards → ShopLite — Golden Signals
-#
-# AWS console: listener default "fixed 404" is normal for AWS Load Balancer
-# Controller. Real routing is the extra listener rules (path / → Grafana).
-#
-# Prometheus and Alertmanager are ClusterIP only (no public URL).
-
-# If the bastion curl is 200 but your laptop browser times out:
-# the ALB is healthy; your home IP is not allowed (or the browser used IPv6/HTTPS).
-# AWS console → that ALB → Security → inbound must include TCP 80 from 0.0.0.0/0
-# (or your public IP /32). A rule of only 10.0.0.0/16 explains bastion-ok / laptop-timeout.
-#
-# On the bastion, force the LBC-managed SG:
-kubectl annotate ingress grafana -n monitoring --overwrite \
-  alb.ingress.kubernetes.io/inbound-cidrs='0.0.0.0/0' \
-  alb.ingress.kubernetes.io/ip-address-type=ipv4
-#
-# From your laptop (not the bastion):
-#   curl -4 -sI http://<grafana-alb-hostname>/login
-#
-# Workaround (laptop → bastion → Grafana Service), from your laptop:
-#   ssh -i ~/.ssh/id_ed25519 -L 3000:127.0.0.1:3000 ubuntu@54.251.166.226
-# then on the bastion:
-#   kubectl -n monitoring port-forward svc/grafana 3000:80
-# Browser: http://127.0.0.1:3000/login
-
-
-## 9. Check application metrics
-
-# port-forward is a long-running process. Keep it open, then curl from a
-# second SSH session. If you Ctrl+C first, curl hits nothing and prints empty.
-#
-# One session (no port-forward): scrape from inside the pods.
-
-kubectl -n shoplite exec deploy/catalog-api -- python -c \
-  "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/metrics').read().decode())" \
-  | grep -E 'http_requests_total|http_request_duration_seconds|orders_created_total|order_queue_depth'
-
-kubectl -n shoplite exec deploy/order-worker -- python -c \
-  "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/metrics').read().decode())" \
-  | grep -E 'orders_processed_total|order_processing_seconds|order_queue_depth'
-
-# Two-session alternative:
-#   kubectl -n shoplite port-forward svc/catalog-api 8080:8080
-#   curl -s http://127.0.0.1:8080/metrics | grep -E 'http_requests_total|orders_created_total'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- to get graphana address -->
-After Grafana’s Ingress has an ADDRESS:
-
-kubectl get ingress -n monitoring grafana \
-  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
-
-
-<!-- If the command prints nothing, ADDRESS is still empty (ClusterIP issue, or the ALB is still creating). Then: -->
-kubectl get ingress -n monitoring grafana
-kubectl describe ingress -n monitoring grafana

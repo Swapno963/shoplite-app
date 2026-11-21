@@ -74,7 +74,6 @@ helm upgrade --install shoplite . \
 
 # The AWS ALB forwards to worker NodePort 30080.
 # ShopLite Services are ClusterIP, so ingress-nginx must own that port.
-# Do not curl 127.0.0.1:30080 on the bastion — NodePort is on the workers.
 
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
@@ -161,26 +160,3 @@ curl -I https://051826735078.dkr.ecr.ap-southeast-1.amazonaws.com
 
 <!-- Check if kubelet has ECR credential provider configured -->
 ps -ef | grep kubelet
-
-
-
-
-
-
-
-
-
-
-Now let's go deep, Act as  a senior dev who is explaing to junior dev, who has aws, tarrform, docker knowledge, ​‌
-
-
-postgres-service.yaml	Stable DNS endpoint for PostgreSQL
-postgres-seed-job.yaml	Initialize database with products
-postgres-networkpolicy.yaml	Restrict PostgreSQL access
-ingress.yaml	Route external traffic into the cluster4
-
-
-Files content, how they work tougather, while explaing each add a small  description with it's most importent property,behaviour, commonly miss understood
-
-
-also draw a Full Flow to explain how those component fit in
