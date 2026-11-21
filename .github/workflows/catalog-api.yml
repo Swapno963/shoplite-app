@@ -1,10 +1,9 @@
-
 name: Build Catalog API
 
 on:
   push:
     branches:
-      - monitoring
+      - main
     paths:
       - 'application/catalog-api/**'
 
@@ -50,3 +49,47 @@ jobs:
           # Push both tags
           docker push $ECR_REPOSITORY:${{ github.sha }}
           docker push $ECR_REPOSITORY:stable
+
+      - name: Checkout GitOps
+        uses: actions/checkout@v4
+        with:
+          repository: Swapno963/shoplite-gitops
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: Bump GitOps image tag
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          cd gitops
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+
+            current=$(yq -r '.catalogApi.image.tag' envs/dev/values.yaml)
+            if [ "$current" = "$IMAGE_TAG" ]; then
+              echo "GitOps already at $IMAGE_TAG"
+              exit 0
+            fi
+
+            yq -i '.catalogApi.image.tag = strenv(IMAGE_TAG)' envs/dev/values.yaml
+            git add envs/dev/values.yaml
+            git commit -m "Bump catalog-api image to ${IMAGE_TAG}"
+
+            if git push origin main; then
+              exit 0
+            fi
+            echo "Push failed on attempt ${attempt}, retrying..."
+            sleep $((attempt * 2))
+          done
+
+          echo "Failed to push GitOps tag after retries"
+          exit 1

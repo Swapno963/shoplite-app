@@ -103,12 +103,13 @@ data "aws_iam_policy_document" "github_oidc" {
       variable = "token.actions.githubusercontent.com:sub"
 
       values = [
-        "repo:Swapno963@100410169/shoplite-app@1454159317:*"
+        "repo:Swapno963/shoplite-app:*"
       ]
     }
   }
 }
 
+data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role_policy_attachment" "ecr_power_user" {
   role       = aws_iam_role.github_actions.name
@@ -121,32 +122,56 @@ resource "aws_iam_role" "github_actions" {
 }
 
 resource "aws_iam_role" "terraform_plan" {
-
-  name = "terraform-plan-role"
-
+  name               = "terraform-plan-role"
   assume_role_policy = data.aws_iam_policy_document.github_oidc.json
 }
 
-resource "aws_iam_role_policy" "terraform_plan" {
+resource "aws_iam_role_policy_attachment" "terraform_plan_readonly" {
+  role       = aws_iam_role.terraform_plan.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
 
-  role = aws_iam_role.terraform_plan.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-
-    Statement = [
-
-      {
-        Effect = "Allow"
-
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:ListBucket"
-        ]
-
-        Resource = "*"
-      }
+data "aws_iam_policy_document" "terraform_plan_state" {
+  statement {
+    sid    = "StateBucketList"
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket"
     ]
-  })
+    resources = [
+      "arn:aws:s3:::shoplite-tfstate-535d4a18"
+    ]
+  }
+
+  statement {
+    sid    = "StateObjects"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    resources = [
+      "arn:aws:s3:::shoplite-tfstate-535d4a18/*"
+    ]
+  }
+
+  statement {
+    sid    = "StateLocks"
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable"
+    ]
+    resources = [
+      "arn:aws:dynamodb:ap-southeast-1:${data.aws_caller_identity.current.account_id}:table/shoplite-terraform-locks"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "terraform_plan" {
+  role   = aws_iam_role.terraform_plan.id
+  policy = data.aws_iam_policy_document.terraform_plan_state.json
 }

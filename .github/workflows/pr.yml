@@ -1,27 +1,281 @@
-
-name: Terraform PR Plan
+name: Pull Request
 
 on:
   pull_request:
-    branches:
-      - main
-    paths:
-      - 'terraform/**'
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
+  pull-requests: write
 
 jobs:
-  terraform-plan:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Lint catalog-api Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: application/catalog-api/Dockerfile
+
+      - name: Lint web Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: application/web/Dockerfile
+
+      - name: Lint order-worker Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: application/order-worker/Dockerfile
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm Lint
+        run: helm lint helm/shoplite
+
+      - name: Helm Template Validation
+        run: helm template shoplite helm/shoplite > /dev/null
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint .
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+        working-directory: terraform
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: application/catalog-api
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        working-directory: application/catalog-api
+        run: pytest -v --tb=short
+
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Short SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build catalog-api
+        run: docker build -t catalog-api:${{ steps.vars.outputs.sha }} ./application/catalog-api
+
+      - name: Build web
+        run: docker build -t web:${{ steps.vars.outputs.sha }} ./application/web
+
+      - name: Build order-worker
+        run: docker build -t order-worker:${{ steps.vars.outputs.sha }} ./application/order-worker
+
+      - name: Show Images
+        run: docker images
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Short SHA
+        run: echo "SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Build catalog-api
+        run: docker build -t catalog-api:${SHA} ./application/catalog-api
+
+      - name: Build web
+        run: docker build -t web:${SHA} ./application/web
+
+      - name: Build order-worker
+        run: docker build -t order-worker:${SHA} ./application/order-worker
+
+      - name: Scan catalog-api
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: catalog-api:${{ env.SHA }}
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+          version: v0.69.3
+
+      - name: Scan web
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: web:${{ env.SHA }}
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+          version: v0.69.3
+
+      - name: Scan order-worker
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: order-worker:${{ env.SHA }}
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+          version: v0.69.3
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      - name: Grype catalog-api
+        run: grype catalog-api:${SHA} --fail-on critical
+
+      - name: Grype web
+        run: grype web:${SHA} --fail-on critical
+
+      - name: Grype order-worker
+        run: grype order-worker:${SHA} --fail-on critical
+
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect terraform changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+
+      - name: Setup Terraform
+        if: steps.filter.outputs.terraform == 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
       - name: Configure AWS credentials
+        if: steps.filter.outputs.terraform == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::123456789012:role/terraform-plan-role
+          role-to-assume: ${{ secrets.AWS_TF_PLAN_ROLE_ARN != '' && secrets.AWS_TF_PLAN_ROLE_ARN || 'arn:aws:iam::051826735078:role/terraform-plan-role' }}
           aws-region: ap-southeast-1
+
+      - name: Terraform Init
+        if: steps.filter.outputs.terraform == 'true'
+        run: terraform init -input=false -backend-config=backend.hcl
+
+      - name: Terraform Plan
+        if: steps.filter.outputs.terraform == 'true'
+        id: plan
+        continue-on-error: true
+        env:
+          TF_VAR_ADMIN_CIDR: ${{ secrets.TF_VAR_ADMIN_CIDR }}
+        run: |
+          set +e
+          ADMIN_CIDR="${TF_VAR_ADMIN_CIDR:-0.0.0.0/0}"
+          terraform plan -no-color -input=false -out=tfplan -var="admin_cidr=${ADMIN_CIDR}"
+          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
+          if [ -f tfplan ]; then
+            terraform show -no-color tfplan > tfplan.txt
+          else
+            echo "Terraform plan did not produce an output file." > tfplan.txt
+          fi
+
+      - name: Post Terraform plan comment
+        if: always() && steps.filter.outputs.terraform == 'true'
+        uses: actions/github-script@v7
+        env:
+          PLAN_EXIT: ${{ steps.plan.outputs.exitcode }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- terraform-plan -->';
+            const planPath = 'terraform/tfplan.txt';
+            let plan = fs.existsSync(planPath)
+              ? fs.readFileSync(planPath, 'utf8')
+              : 'Plan output was not produced.';
+            const max = 60000;
+            if (plan.length > max) {
+              plan = plan.slice(0, max) + '\n\n... truncated ...';
+            }
+            const exitCode = process.env.PLAN_EXIT || 'unknown';
+            const status = exitCode === '0' ? 'success' : `failed (exit ${exitCode})`;
+            const body = [
+              marker,
+              '## Terraform plan',
+              '',
+              `**Status:** ${status}`,
+              '',
+              '```hcl',
+              plan,
+              '```',
+              '',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail on plan error
+        if: steps.filter.outputs.terraform == 'true' && steps.plan.outputs.exitcode != '0'
+        run: exit 1

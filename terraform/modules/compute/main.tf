@@ -12,10 +12,10 @@ resource "aws_instance" "bastion" {
   key_name                    = var.key_name
 
   metadata_options {
-  http_endpoint               = "enabled"
-  http_tokens                 = "required"
-  http_put_response_hop_limit = 2
-}
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size = 8
@@ -68,10 +68,10 @@ resource "aws_instance" "worker" {
   key_name                    = var.key_name
 
   metadata_options {
-  http_endpoint               = "enabled"
-  http_tokens                 = "required"
-  http_put_response_hop_limit = 2
-}
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size = 20
