@@ -39,23 +39,9 @@ jobs:
               print(f"{key}={claims.get(key)}")
           PY
 
-      - name: Resolve AWS role ARN
-        id: aws_role
-        env:
-          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-        run: |
-          ARN="$(printf '%s' "$AWS_ROLE_ARN" | tr -d '\r\n' | sed 's/^["'\'']//;s/["'\'']$//')"
-          if [ -z "$ARN" ]; then
-            echo "Repository secret AWS_ROLE_ARN is empty." >&2
-            exit 1
-          fi
-          echo "arn_length=${#ARN}"
-          echo "role_name=${ARN##*/}"
-          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ steps.aws_role.outputs.arn }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-southeast-1
           audience: sts.amazonaws.com
           role-skip-session-tagging: true

@@ -104,7 +104,8 @@ data "aws_iam_policy_document" "github_oidc" {
       variable = "token.actions.githubusercontent.com:sub"
 
       values = [
-        "repo:Swapno963/shoplite-app:*"
+        "repo:Swapno963/shoplite-app:*",
+        "repo:Swapno963@100410169/shoplite-app@1454159317:*",
       ]
     }
   }
