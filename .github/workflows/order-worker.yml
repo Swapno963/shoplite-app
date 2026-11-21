@@ -3,7 +3,7 @@ name: Build Order Worker
 on:
   push:
     branches:
-      - main
+      - gitOps
     paths:
       - 'application/order-worker/**'
 
