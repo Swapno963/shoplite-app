@@ -6,10 +6,12 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: instance
+    alb.ingress.kubernetes.io/ip-address-type: ipv4
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/inbound-cidrs: {{ .Values.grafanaInboundCidrs | quote }}
     alb.ingress.kubernetes.io/healthcheck-path: /login
     alb.ingress.kubernetes.io/success-codes: "200-399"
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
     # ACM later:
     # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
     # alb.ingress.kubernetes.io/certificate-arn: {{ .Values.grafanaCertificateArn | quote }}

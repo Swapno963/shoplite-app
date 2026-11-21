@@ -68,12 +68,16 @@ kube-prometheus-stack:
     fullnameOverride: grafana
     adminPassword: admin
     grafana.ini:
+      server:
+        protocol: http
+        serve_from_sub_path: false
       users:
         allow_sign_up: false
       auth.anonymous:
         enabled: false
       security:
         disable_gravatar: true
+        cookie_secure: false
     persistence:
       enabled: true
       storageClassName: gp3

@@ -13,7 +13,7 @@ export LANG=en_US.UTF-8
 
 
 ## Add basion on known host
-ssh-keyscan -H 54.179.61.106 >> ~/.ssh/known_hosts
+ssh-keyscan -H 18.139.227.140 >> ~/.ssh/known_hosts
 
 
 
@@ -33,33 +33,31 @@ ansible-playbook -i inventory site.yml
 
 
 
-
-alb_dns_name = "shoplite-alb-172856921.ap-southeast-1.elb.amazonaws.com"
+alb_dns_name = "shoplite-alb-858106183.ap-southeast-1.elb.amazonaws.com"
 app_fqdn = ""
-bastion_instance_id = "i-0144e62d6e1d24f57"
-bastion_public_ip = "54.179.61.106"
-control_plane_instance_id = "i-0e13eead1873911d3"
-control_plane_private_ip = "10.0.10.53"
+bastion_instance_id = "i-07b3944742493ea4d"
+bastion_public_ip = "18.139.227.140"
+control_plane_instance_id = "i-016c5b6515ec82645"
+control_plane_private_ip = "10.0.10.190"
 ecr_repository_urls = {
   "catalog-api" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api"
   "order-worker" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker"
   "web" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web"
 }
 private_subnet_ids = [
-  "subnet-0213b67f920e7b658",
-  "subnet-008f83abb5ad5881a",
+  "subnet-06722f3575d1e225a",
+  "subnet-0990f3b2ef6abe7c5",
 ]
 public_subnet_ids = [
-  "subnet-0555582a03ee69326",
-  "subnet-08496ada1e93d5710",
+  "subnet-0c7e67c9498ca23a2",
+  "subnet-0345d15258e71c011",
 ]
-vpc_id = "vpc-0114452c910fbbd71"
+vpc_id = "vpc-04613ee77f5690a53"
 worker_instance_ids = [
-  "i-07098f402b365a295",
-  "i-00ae864aee2169614",
+  "i-06ffa9792ef7bfaea",
+  "i-0d2b02b99fa39c6f1",
 ]
 worker_private_ips = [
-  "10.0.10.220",
-  "10.0.11.143",
+  "10.0.10.91",
+  "10.0.11.18",
 ]
-swap

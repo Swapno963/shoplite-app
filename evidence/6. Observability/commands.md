@@ -1,10 +1,10 @@
 ## Copy charts to the bastion (from your laptop)
 
-scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@54.179.61.106:~/
+scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@18.139.227.140:~/
 
 scp -i ~/.ssh/id_ed25519 \
   ansible/artifacts/kubeconfig \
-  ubuntu@54.179.61.106:~/kubeconfig
+  ubuntu@18.139.227.140:~/kubeconfig
 
 
 ## 1. Terraform — IAM + subnet tags (from your laptop)
@@ -19,12 +19,12 @@ echo "$VPC_ID"
 
 ## On the bastion
 
-ssh -i ~/.ssh/id_ed25519 ubuntu@54.179.61.106
+ssh -i ~/.ssh/id_ed25519 ubuntu@18.139.227.140
 
 export KUBECONFIG=/home/ubuntu/kubeconfig
 
 # Paste the VPC id from terraform output:
-export VPC_ID='vpc-xxxxxxxx'
+export VPC_ID='vpc-04613ee77f5690a53'
 
 kubectl get nodes
 
@@ -71,7 +71,7 @@ kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found |
 #
 #   scp -i ~/.ssh/id_ed25519 \
 #     helm/observability/values-slack.yaml \
-#     ubuntu@54.179.61.106:~/helm/observability/values-slack.yaml
+#     ubuntu@18.139.227.140:~/helm/observability/values-slack.yaml
 #
 # Template: helm/observability/values-slack.yaml.example
 # Channel: #shoplite-alerts (must match the Incoming Webhook's channel)
@@ -84,6 +84,8 @@ kubectl delete prometheusrule shoplite-alerts -n monitoring --ignore-not-found |
 
 
 ## 6. Observability umbrella
+# Live stack is helm/observability (this install). The monitoring/ folder is
+# standalone chart values + runbooks; do not helm-install those on top of the umbrella.
 # Prometheus + Grafana + Alertmanager + Loki + Promtail + Tempo
 # Golden Signals dashboard + five PrometheusRules
 # Grafana Ingress (ALB, HTTP, IP allowlist)
@@ -142,22 +144,55 @@ kubectl get servicemonitor -n shoplite
 
 kubectl get ingress -n monitoring grafana -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 
-# Browser (from an IP allowed by grafanaInboundCidrs):
-#   http://<that-hostname>/
+# Must be HTTP (there is no 443 listener / ACM). Chrome HTTPS-only mode
+# times out on 443 (SG drops; looks like ERR_CONNECTION_TIMED_OUT).
+#   http://<that-hostname>/login
 # Login: admin / admin
 # Dashboards → ShopLite — Golden Signals
 #
+# AWS console: listener default "fixed 404" is normal for AWS Load Balancer
+# Controller. Real routing is the extra listener rules (path / → Grafana).
+#
 # Prometheus and Alertmanager are ClusterIP only (no public URL).
+
+# If the bastion curl is 200 but your laptop browser times out:
+# the ALB is healthy; your home IP is not allowed (or the browser used IPv6/HTTPS).
+# AWS console → that ALB → Security → inbound must include TCP 80 from 0.0.0.0/0
+# (or your public IP /32). A rule of only 10.0.0.0/16 explains bastion-ok / laptop-timeout.
+#
+# On the bastion, force the LBC-managed SG:
+kubectl annotate ingress grafana -n monitoring --overwrite \
+  alb.ingress.kubernetes.io/inbound-cidrs='0.0.0.0/0' \
+  alb.ingress.kubernetes.io/ip-address-type=ipv4
+#
+# From your laptop (not the bastion):
+#   curl -4 -sI http://<grafana-alb-hostname>/login
+#
+# Workaround (laptop → bastion → Grafana Service), from your laptop:
+#   ssh -i ~/.ssh/id_ed25519 -L 3000:127.0.0.1:3000 ubuntu@18.139.227.140
+# then on the bastion:
+#   kubectl -n monitoring port-forward svc/grafana 3000:80
+# Browser: http://127.0.0.1:3000/login
 
 
 ## 9. Check application metrics
 
-kubectl -n shoplite port-forward svc/catalog-api 8080:8080
-# other terminal:
-curl -s http://127.0.0.1:8080/metrics | grep -E 'http_requests_total|http_request_duration_seconds|orders_created_total|order_queue_depth'
+# port-forward is a long-running process. Keep it open, then curl from a
+# second SSH session. If you Ctrl+C first, curl hits nothing and prints empty.
+#
+# One session (no port-forward): scrape from inside the pods.
 
-kubectl -n shoplite port-forward svc/order-worker 8081:8080
-curl -s http://127.0.0.1:8081/metrics | grep -E 'orders_processed_total|order_processing_seconds|order_queue_depth'
+kubectl -n shoplite exec deploy/catalog-api -- python -c \
+  "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/metrics').read().decode())" \
+  | grep -E 'http_requests_total|http_request_duration_seconds|orders_created_total|order_queue_depth'
+
+kubectl -n shoplite exec deploy/order-worker -- python -c \
+  "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/metrics').read().decode())" \
+  | grep -E 'orders_processed_total|order_processing_seconds|order_queue_depth'
+
+# Two-session alternative:
+#   kubectl -n shoplite port-forward svc/catalog-api 8080:8080
+#   curl -s http://127.0.0.1:8080/metrics | grep -E 'http_requests_total|orders_created_total'
 
 
 
