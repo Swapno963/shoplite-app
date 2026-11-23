@@ -3,7 +3,7 @@ name: Build Catalog API
 on:
   push:
     branches:
-      - gitOps
+      - main
     paths:
       - 'application/catalog-api/**'
 
