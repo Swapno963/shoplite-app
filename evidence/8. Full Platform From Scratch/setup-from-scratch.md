@@ -25,14 +25,18 @@ You (laptop)
 
 Repos:
 
-| Repo | Role |
-|------|------|
-| `https://github.com/Swapno963/shoplite-app.git` | App source, Helm chart `helm/shoplite`, GitHub Actions, Terraform, Ansible |
+
+| Repo                                               | Role                                                                       |
+| -------------------------------------------------- | -------------------------------------------------------------------------- |
+| `https://github.com/Swapno963/shoplite-app.git`    | App source, Helm chart `helm/shoplite`, GitHub Actions, Terraform, Ansible |
 | `https://github.com/Swapno963/shoplite-gitops.git` | Argo CD `AppProject` + Applications + env values (`envs/dev`, `envs/prod`) |
+
 
 Region: `ap-southeast-1`. Account used in this project: `051826735078`.
 
 ---
+
+
 
 ## 0. Prerequisites (laptop)
 
@@ -58,10 +62,12 @@ aws ec2 import-key-pair \
 
 GitHub repo secrets on `shoplite-app` (for CI image push + GitOps tag bump):
 
-| Secret | Purpose |
-|--------|---------|
-| `AWS_ROLE_ARN` | Full ARN of `github-actions-role` (OIDC) |
+
+| Secret         | Purpose                                                                   |
+| -------------- | ------------------------------------------------------------------------- |
+| `AWS_ROLE_ARN` | Full ARN of `github-actions-role` (OIDC)                                  |
 | `GITOPS_TOKEN` | PAT with **write** on `shoplite-gitops` (CI bumps `envs/dev/values.yaml`) |
+
 
 Optional: `AWS_TF_PLAN_ROLE_ARN`, `TF_VAR_ADMIN_CIDR` for the PR Terraform plan job.
 
@@ -82,6 +88,8 @@ Do not paste PATs into shell history or chat. Revoke any token that was logged.
 
 ---
 
+
+
 ## 1. Terraform — AWS infrastructure
 
 Work from `shoplite-app/terraform`.
@@ -99,6 +107,8 @@ admin_cidr   = "YOUR_PUBLIC_IP/32"   # SSH to bastion; 0.0.0.0/0 is open to the 
 key_name     = "shoplite"
 ingress_node_port = 30080
 ```
+
+
 
 ### 1.1 State bucket (first time only)
 
@@ -118,6 +128,8 @@ region         = "ap-southeast-1"
 dynamodb_table = "shoplite-terraform-locks"
 encrypt        = true
 ```
+
+
 
 ### 1.2 Main stack
 
@@ -169,6 +181,8 @@ ssh-keyscan -H <bastion_public_ip> >> ~/.ssh/known_hosts
 
 ---
 
+
+
 ## 2. Ansible — Kubernetes cluster
 
 From `shoplite-app/ansible` on the laptop (SSH jumps through the bastion):
@@ -213,6 +227,8 @@ scp -i ~/.ssh/id_ed25519 \
 
 ---
 
+
+
 ## 3. Bastion tools
 
 ```bash
@@ -241,7 +257,11 @@ scp -i ~/.ssh/id_ed25519 -r helm monitoring \
 
 ---
 
+
+
 ## 4. Platform Helm (not the ShopLite app)
+
+
 
 ### 4.1 ingress-nginx (required for ShopLite HTTP)
 
@@ -296,6 +316,8 @@ helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-contro
 kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
 ```
 
+
+
 ### 4.3 Observability (optional but used in this project)
 
 Full commands: `evidence/6. Observability/commands.md`.
@@ -315,11 +337,16 @@ helm upgrade --install observability . \
   -f /home/ubuntu/helm/observability/values.yaml \
   -f /home/ubuntu/helm/observability/values-slack.yaml \
   --wait --timeout 20m
+
+kubectl get ingress -n monitoring grafana \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 ```
 
 ShopLite ServiceMonitors are part of `helm/shoplite`. After Argo CD syncs the app, they appear in `shoplite-dev` / `shoplite-prod` if Prometheus CRDs exist. **Do not** `helm upgrade shoplite` to get ServiceMonitors.
 
 ---
+
+
 
 ## 5. Container images in ECR
 
@@ -346,7 +373,11 @@ sudo journalctl -u kubelet -n 100 --no-pager
 
 ---
 
+
+
 ## 6. Argo CD
+
+
 
 ### 6.1 Install
 
@@ -380,7 +411,7 @@ export KUBECONFIG=/home/ubuntu/kubeconfig
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-Laptop browser: **https://localhost:8080** (HTTPS, accept the self-signed cert). `http://` will fail.
+Laptop browser: **[https://localhost:8080](https://localhost:8080)** (HTTPS, accept the self-signed cert). `http://` will fail.
 
 Password:
 
@@ -398,6 +429,8 @@ The `argocd` CLI is **not** installed by the cluster manifests. Prefer the UI or
 curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo install -m 555 argocd /usr/local/bin/argocd
 ```
+
+
 
 ### 6.3 Register Git repositories (required if private)
 
@@ -467,13 +500,15 @@ kubectl apply -n argocd -f apps/argocd-applications/shoplite-prod.yaml
 
 Installing Argo CD does **not** create Applications. Until this step the UI shows “No applications available”.
 
-| Resource | Name | Sync |
-|----------|------|------|
-| AppProject | `shoplite` | Allows the two GitHub repos and namespaces `shoplite-dev` / `shoplite-prod` |
-| Application | `shoplite-dev` | Automated, prune, self-heal |
-| Application | `shoplite-prod` | Automated, self-heal, **no prune** |
 
-Both Applications watch **`main`** on both repos (`helm/shoplite` + `envs/*/values.yaml`). Chart changes only apply after they are on `shoplite-app` `main`.
+| Resource    | Name            | Sync                                                                        |
+| ----------- | --------------- | --------------------------------------------------------------------------- |
+| AppProject  | `shoplite`      | Allows the two GitHub repos and namespaces `shoplite-dev` / `shoplite-prod` |
+| Application | `shoplite-dev`  | Automated, prune, self-heal                                                 |
+| Application | `shoplite-prod` | Automated, self-heal, **no prune**                                          |
+
+
+Both Applications watch `main` on both repos (`helm/shoplite` + `envs/*/values.yaml`). Chart changes only apply after they are on `shoplite-app` `main`.
 
 ```bash
 kubectl -n argocd get appproject
@@ -485,14 +520,16 @@ Wait until `Synced` / `Healthy`. Dev auto-syncs; you do not run `argocd app sync
 
 ### 6.6 Namespaces
 
-| Namespace | What it is |
-|-----------|------------|
-| `argocd` | Argo CD itself |
-| `shoplite-dev` | GitOps development |
-| `shoplite-prod` | GitOps production |
-| `shoplite` | **Old** `helm upgrade --install shoplite` install. Not Argo. `kubectl get all -n shoplite` is the wrong place to debug GitOps crashes. |
-| `ingress-nginx` | Ingress controller |
-| `monitoring` | Optional observability |
+
+| Namespace       | What it is                                                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `argocd`        | Argo CD itself                                                                                                                         |
+| `shoplite-dev`  | GitOps development                                                                                                                     |
+| `shoplite-prod` | GitOps production                                                                                                                      |
+| `shoplite`      | **Old** `helm upgrade --install shoplite` install. Not Argo. `kubectl get all -n shoplite` is the wrong place to debug GitOps crashes. |
+| `ingress-nginx` | Ingress controller                                                                                                                     |
+| `monitoring`    | Optional observability                                                                                                                 |
+
 
 Debug GitOps catalog-api:
 
@@ -502,6 +539,8 @@ kubectl -n shoplite-dev logs -l app=catalog-api --previous --tail=80
 ```
 
 ---
+
+
 
 ## 7. Verify the app
 
@@ -523,6 +562,8 @@ Dev host from values: `dev.shoplite.local` (add `/etc/hosts` → ALB if you use 
 
 ---
 
+
+
 ## 8. Day-2 (no Helm for the app)
 
 1. Change code in `shoplite-app`, push the branch GitHub Actions watches.
@@ -541,6 +582,8 @@ kubectl -n shoplite-dev scale deploy web --replicas=5
 
 ---
 
+
+
 ## 9. Checklist
 
 - [ ] Terraform applied; inventory IPs match outputs
@@ -556,6 +599,8 @@ kubectl -n shoplite-dev scale deploy web --replicas=5
 
 ---
 
+
+
 ## 10. What not to do
 
 - Do not `helm upgrade --install shoplite` for a GitOps rebuild (creates a third copy in `shoplite`).
@@ -563,3 +608,4 @@ kubectl -n shoplite-dev scale deploy web --replicas=5
 - Do not debug `shoplite-dev` CrashLoop by `kubectl get all -n shoplite`.
 - Do not change `POSTGRES_PASSWORD` after Postgres has initialized the PVC.
 - Do not commit PATs, `terraform.tfvars`, or kubeconfig.
+
