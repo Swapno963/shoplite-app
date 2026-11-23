@@ -13,7 +13,7 @@ export LANG=en_US.UTF-8
 
 
 ## Add basion on known host
-ssh-keyscan -H 54.251.166.226 >> ~/.ssh/known_hosts
+ssh-keyscan -H 13.213.41.145 >> ~/.ssh/known_hosts
 
 
 
@@ -36,7 +36,7 @@ ansible-playbook -i inventory site.yml
 alb_dns_name = "shoplite-alb-1730409265.ap-southeast-1.elb.amazonaws.com"
 app_fqdn = ""
 bastion_instance_id = "i-07e2b5754081ac529"
-bastion_public_ip = "54.251.166.226"
+bastion_public_ip = "13.213.41.145"
 control_plane_instance_id = "i-05497851ca176aaea"
 control_plane_private_ip = "10.0.10.167"
 ecr_repository_urls = {

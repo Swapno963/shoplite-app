@@ -14,7 +14,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 
 ## On another terminal
-ssh -i ~/.ssh/id_ed25519 -L 8080:127.0.0.1:8080 ubuntu@54.251.166.226
+ssh -i ~/.ssh/id_ed25519 -L 8080:127.0.0.1:8080 ubuntu@13.213.41.145
 
 <!-- set kube config -->
 export KUBECONFIG=/home/ubuntu/kubeconfig

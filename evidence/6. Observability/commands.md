@@ -1,10 +1,10 @@
 ## Copy charts to the bastion (from your laptop)
 
-scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@54.251.166.226:~/
+scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@13.213.41.145:~/
 
 scp -i ~/.ssh/id_ed25519 \
   ansible/artifacts/kubeconfig \
-  ubuntu@54.251.166.226:~/kubeconfig
+  ubuntu@13.213.41.145:~/kubeconfig
 
 
 ## 1. Terraform — IAM + subnet tags (from your laptop)
@@ -19,7 +19,7 @@ echo "$VPC_ID"
 
 ## On the bastion
 
-ssh -i ~/.ssh/id_ed25519 ubuntu@54.251.166.226
+ssh -i ~/.ssh/id_ed25519 ubuntu@13.213.41.145
 
 export KUBECONFIG=/home/ubuntu/kubeconfig
 
@@ -57,7 +57,7 @@ kubectl get ingressclass alb
 #
 #   scp -i ~/.ssh/id_ed25519 \
 #     helm/observability/values-slack.yaml \
-#     ubuntu@54.251.166.226:~/helm/observability/values-slack.yaml
+#     ubuntu@13.213.41.145:~/helm/observability/values-slack.yaml
 #
 # Template: helm/observability/values-slack.yaml.example
 # Channel: #shoplite-alerts (must match the Incoming Webhook's channel)
