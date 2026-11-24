@@ -24,6 +24,8 @@ spec:
     metadata:
       labels:
         app: catalog-api
+      annotations:
+        checksum/application-config: {{ .Values.applicationConfig | toJson | sha256sum }}
 
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}

@@ -17,7 +17,8 @@ spec:
     metadata:
       labels:
         app: web
-
+      annotations:
+        checksum/application-config: {{ .Values.applicationConfig | toJson | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
 

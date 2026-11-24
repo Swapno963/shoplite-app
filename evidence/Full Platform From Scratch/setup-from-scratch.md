@@ -1,6 +1,6 @@
 # ShopLite — set up the platform from scratch
 
-Use this when AWS, the Kubernetes cluster, and the apps are gone and you need to bring everything back.
+When AWS, the Kubernetes cluster, and the apps are gone and needed to bring everything back.
 
 **ShopLite the application is no longer installed with Helm.** Helm is only for cluster add-ons (ingress-nginx, AWS Load Balancer Controller, observability). The app is deployed by Argo CD from Git.
 
@@ -13,7 +13,7 @@ Related notes:
 - GitOps Applications: repo `shoplite-gitops`
 
 ```text
-You (laptop)
+You' (laptop/vm)
   → Terraform (AWS VPC, EC2, ALB, ECR, IAM)
   → Ansible (kubeadm, CNI, EBS CSI, ECR image pull)
   → Helm (ingress-nginx, optional monitoring)
@@ -84,8 +84,6 @@ GitHub OIDC `sub` (2026 immutable claims) on the IAM role trust policy must allo
 
 Also allow `sts:TagSession` **or** keep `role-skip-session-tagging: true` on the workflows. Audience: `sts.amazonaws.com`.
 
-Do not paste PATs into shell history or chat. Revoke any token that was logged.
-
 ---
 
 
@@ -98,7 +96,7 @@ Work from `shoplite-app/terraform`.
 cd /path/to/shoplite-app/terraform
 ```
 
-`*.tfvars` is gitignored. Create `terraform.tfvars` (copy from a local example if you have one):
+`*.tfvars` is gitignored. Create `terraform.tfvars`:
 
 ```hcl
 aws_region   = "ap-southeast-1"
@@ -250,7 +248,7 @@ kubectl get pods -A
 Copy Helm charts (ingress, observability, LBC values) — **not** as a ShopLite install:
 
 ```bash
-# from laptop
+# from laptop/vm
 scp -i ~/.ssh/id_ed25519 -r helm monitoring \
   ubuntu@<bastion_public_ip>:~/
 ```
@@ -267,8 +265,20 @@ scp -i ~/.ssh/id_ed25519 -r helm monitoring \
 
 ALB forwards to worker **NodePort 30080**. ShopLite Services are ClusterIP; nginx must own that port.
 
+The values file lives in this repo (`helm/ingress-nginx-values.yaml`). It must be on the bastion first (`ls ~/helm/ingress-nginx-values.yaml`). If that path is missing, run the `scp` in **§3** from the **laptop** (a new terminal, not inside `ssh`):
+
+```bash
+# from laptop, repo root
+scp -i ~/.ssh/id_ed25519 -r helm monitoring \
+  ubuntu@<bastion_public_ip>:~/
+```
+
+Then on the bastion:
+
 ```bash
 export KUBECONFIG=/home/ubuntu/kubeconfig
+
+ls ~/helm/ingress-nginx-values.yaml
 
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
