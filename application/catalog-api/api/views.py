@@ -16,7 +16,7 @@ from api.serializers import OrderCreateSerializer, OrderSerializer, ProductSeria
 
 logger = logging.getLogger(__name__)
 
-#  1
+#  12
 @api_view(["GET"])
 def list_products(request):
     products = Product.objects.all()
