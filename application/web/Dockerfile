@@ -37,18 +37,18 @@ RUN addgroup -S nginxuser && \
         /var/run \
         /var/log/nginx
 
-# Nginx listens on 8080 for non-root execution
-RUN sed -i 's/listen 80;/listen 8080;/g' \
+# Nginx listens on 8060 for non-root execution
+RUN sed -i 's/listen 80;/listen 8060;/g' \
     /etc/nginx/conf.d/default.conf
 
 USER nginxuser
 
-EXPOSE 8080
+EXPOSE 8060
 
 HEALTHCHECK --interval=30s \
             --timeout=5s \
             --start-period=10s \
             --retries=3 \
-    CMD wget --spider -q http://localhost:8080/ || exit 1
+    CMD wget --spider -q http://localhost:8060/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
