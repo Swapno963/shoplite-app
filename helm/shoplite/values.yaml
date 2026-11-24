@@ -23,7 +23,7 @@ web:
     tag: latest
   service:
     port: 80
-    targetPort: 80
+    targetPort: 8060
   resources:
     requests:
       cpu: 100m
