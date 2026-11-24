@@ -1,44 +1,59 @@
-## Copy charts to the bastion (from your laptop)
+# Observability stack (Grafana / Prometheus / Loki / Tempo)
 
+Laptop first, then the bastion. Use the current bastion IP from Terraform. Last time I used `13.213.41.145`.
+
+## Copy files up
+
+```bash
 scp -i ~/.ssh/id_ed25519 -r helm monitoring ubuntu@13.213.41.145:~/
 
 scp -i ~/.ssh/id_ed25519 \
   ansible/artifacts/kubeconfig \
   ubuntu@13.213.41.145:~/kubeconfig
+```
 
+`values-slack.yaml` is gitignored. Copy it yourself:
 
-## 1. Terraform — IAM + subnet tags (from your laptop)
+```bash
+scp -i ~/.ssh/id_ed25519 \
+  helm/observability/values-slack.yaml \
+  ubuntu@13.213.41.145:~/helm/observability/values-slack.yaml
+```
 
+Template: `helm/observability/values-slack.yaml.example`. Slack channel I used: `#shoplite-alerts`.
+
+## IAM / VPC id (laptop)
+
+```bash
 cd ~/Documents/Projects/shoplite-app/terraform
-
 terraform apply
-
 VPC_ID=$(terraform output -raw vpc_id)
 echo "$VPC_ID"
-
+```
 
 ## On the bastion
 
+```bash
 ssh -i ~/.ssh/id_ed25519 ubuntu@13.213.41.145
-
 export KUBECONFIG=/home/ubuntu/kubeconfig
-
-# Paste the VPC id from terraform output:
-export VPC_ID='vpc-0e8890ec3b3165c90'
-
+export VPC_ID='vpc-0e8890ec3b3165c90'   # paste yours
 kubectl get nodes
+```
 
+Helm repos:
 
-## 2. Helm repos
-
+```bash
 helm repo add eks https://aws.github.io/eks-charts
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
+```
 
+## AWS Load Balancer Controller
 
-## 3. AWS Load Balancer Controller
+Grafana gets its own ALB (`ingressClass: alb`). ShopLite HTTP still goes through ingress-nginx.
 
+```bash
 helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
   --namespace kube-system \
   --values /home/ubuntu/helm/aws-load-balancer-controller/values.yaml \
@@ -47,86 +62,74 @@ helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-contro
 
 kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller
 kubectl get ingressclass alb
+```
 
+## Observability umbrella
 
+Live install is `helm/observability`. Don't also helm-install the files under `monitoring/` on top of it.
 
-## 5. Slack webhook
+Pin: Tempo in `Chart.yaml` is **1.21.1** (1.21.2 was never published). Do **not** put `charts/*.tgz` in `.helmignore` or `helm upgrade --install .` will say the subcharts are missing.
 
-# values-slack.yaml is gitignored. Copy it to the bastion from your laptop
-# (it is created locally, not in git):
-#
-#   scp -i ~/.ssh/id_ed25519 \
-#     helm/observability/values-slack.yaml \
-#     ubuntu@13.213.41.145:~/helm/observability/values-slack.yaml
-#
-# Template: helm/observability/values-slack.yaml.example
-# Channel: #shoplite-alerts (must match the Incoming Webhook's channel)
-
-# Standalone kube-prometheus-stack (not the umbrella):
-#   helm upgrade kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-#     -n monitoring \
-#     -f ~/monitoring/kube-prometheus-stack-values.yaml \
-#     -f ~/monitoring/values-slack.yaml
-
-
-## 6. Observability umbrella
-# Live stack is helm/observability (this install). The monitoring/ folder is
-# standalone chart values + runbooks; do not helm-install those on top of the umbrella.
-# Prometheus + Grafana + Alertmanager + Loki + Promtail + Tempo
-# Golden Signals dashboard + five PrometheusRules
-# Grafana Ingress (ALB, HTTP, IP allowlist)
-
-# Optional: lock Grafana to your public IP
-#   --set grafanaInboundCidrs=1.2.3.4/32
-
+```bash
 cd /home/ubuntu/helm/observability
-
-# Confirm Chart.yaml pins grafana/tempo 1.21.1 (1.21.2 was never published).
 grep -A1 'name: tempo' Chart.yaml
-
-# Do NOT add charts/*.tgz to .helmignore. helm upgrade --install . applies
-# .helmignore and will then report the four subcharts as missing.
 
 helm repo update
 helm dependency update
-
 ls charts/
-# expect:
-#   kube-prometheus-stack-77.12.0.tgz  loki-6.29.0.tgz
-#   promtail-6.17.1.tgz                tempo-1.21.1.tgz
+# kube-prometheus-stack-*.tgz  loki-*.tgz  promtail-*.tgz  tempo-1.21.1.tgz
+```
 
-# First install pulls images and creates PVCs; --wait can take most of 20m.
+First install pulls images and creates PVCs. `--wait` can sit there for most of 20 minutes.
+
+Optional: lock Grafana to your IP with `--set grafanaInboundCidrs=1.2.3.4/32`.
+
+```bash
 helm upgrade --install observability . \
   --namespace monitoring \
   --create-namespace \
   -f /home/ubuntu/helm/observability/values.yaml \
   -f /home/ubuntu/helm/observability/values-slack.yaml \
   --wait --timeout 20m
+```
 
-# Confirm the webhook landed (should not show REPLACE_ME or YOUR_SLACK_WEBHOOK_URL)
+Webhook actually in the secret (should not say `REPLACE_ME`):
+
+```bash
 kubectl get secret -n monitoring alertmanager-kube-prometheus-stack-alertmanager \
   -o jsonpath='{.data.alertmanager\.yaml}' | base64 -d
 
-
 kubectl get pods -n monitoring
 kubectl get svc -n monitoring grafana
-# Grafana Service must be NodePort 30300 (ALB instance targets cannot use ClusterIP).
-# Do not use 30080 — that NodePort is ShopLite ingress-nginx.
-
 kubectl get ingress -n monitoring grafana
 kubectl get prometheusrule -n monitoring
+```
 
+Grafana Service is NodePort **30300**. Don't steal **30080** — that is ShopLite ingress-nginx.
 
-## 7. ShopLite ServiceMonitors (CRDs exist after step 6)
+## ShopLite ServiceMonitors
 
+Only after the monitoring CRDs exist. If the app is already on Argo CD, skip this Helm upgrade and let GitOps own ShopLite.
+
+```bash
 helm upgrade shoplite /home/ubuntu/helm/shoplite \
   -f /home/ubuntu/helm/shoplite/values-prod.yaml \
   --namespace shoplite
 
 kubectl get servicemonitor -n shoplite
+```
 
+## Open Grafana
 
-## 8. Open Grafana
+```bash
+kubectl get ingress -n monitoring grafana \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+```
 
-kubectl get ingress -n monitoring grafana -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+Browser: `http://<that-hostname>/`
 
+Before you `terraform destroy`, delete the Grafana Ingress so the Kubernetes ALB goes away:
+
+```bash
+kubectl delete ingress grafana -n monitoring --wait=true
+```

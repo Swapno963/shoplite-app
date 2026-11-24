@@ -1,11 +1,41 @@
-Commands:
+# Docker — run ShopLite on your machine
 
-1. make build:	Builds all Docker images defined in docker-compose.yml using docker compose build.
+From the repo root. You need Docker and Make.
 
-2. make up:	Starts all containers in detached mode (-d), allowing them to run in the background.
+```bash
+cd shoplite-app
+```
 
-3. make down:	Stops and removes all containers, networks, and resources created by Docker Compose.
+Build every image in `docker-compose.yml`:
 
-4. make test:	Runs the Python test suite using pytest. It first checks if a virtual environment exists (.venv/bin/pytest) and uses it; otherwise it falls back to python3 -m pytest.
+```bash
+make build
+```
 
-5. make smoke:	Executes scripts/smoke-test.sh, typically used for basic end-to-end validation that the application is running correctly.
+Bring the stack up in the background:
+
+```bash
+make up
+```
+
+Smoke-test that the app actually answers:
+
+```bash
+make smoke
+```
+
+That runs `scripts/smoke-test.sh`.
+
+Unit tests (uses `.venv/bin/pytest` if you have a venv, otherwise `python3 -m pytest`):
+
+```bash
+make test
+```
+
+When you are done:
+
+```bash
+make down
+```
+
+That stops the containers and tears down the compose network.

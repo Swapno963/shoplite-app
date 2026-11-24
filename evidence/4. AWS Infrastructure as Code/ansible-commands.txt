@@ -1,64 +1,59 @@
+# Ansible — from your laptop onto the nodes
 
-## Install ansible
+Install Ansible (Ubuntu):
+
+```bash
 sudo apt-get update -y
 sudo apt install software-properties-common -y
 sudo apt-add-repository --yes --update ppa:ansible/ansible
 sudo apt-get install -y ansible
 
-
 sudo apt-get install -y locales
 sudo locale-gen en_US.UTF-8
 sudo update-locale LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
+```
 
+Put the bastion in known_hosts so the first SSH does not hang. After `terraform apply` the public IP changes — use the output, not this one blindly:
 
-## Add basion on known host
-ssh-keyscan -H 13.213.1.147 >> ~/.ssh/known_hosts
+```bash
+ssh-keyscan -H 13.215.252.241 >> ~/.ssh/known_hosts
+```
 
+Inventory is `ansible/inventory`. Update hosts to match Terraform (bastion, control plane, workers).
 
+Can Ansible reach them?
 
-## check if ansible can ssh into the remote servers: 
+```bash
+cd ansible
 ansible all -m ping
+```
 
-## syntax check
+Syntax, then the real run:
+
+```bash
 ansible-playbook -i inventory site.yml --syntax-check
-
-
-
-## Run the playbook: 
 ansible-playbook -i inventory site.yml
+```
 
+That playbook prepares nodes, installs containerd/kubeadm, inits the control plane, joins workers, CNI, EBS CSI, ECR pull.
 
+## Example Terraform outputs from one apply
 
+These are from a previous cluster. Yours will differ.
 
+```text
+alb_dns_name = "shoplite-alb-1672983113.ap-southeast-1.elb.amazonaws.com"
+bastion_public_ip = "13.215.252.241"
+control_plane_private_ip = "10.0.10.174"
+vpc_id = "vpc-02f9a0e8844f607cb"
+worker_private_ips = ["10.0.10.206", "10.0.11.110"]
+```
 
-Outputs:
+ECR (this account):
 
-alb_dns_name = "shoplite-alb-992110693.ap-southeast-1.elb.amazonaws.com"
-app_fqdn = ""
-bastion_instance_id = "i-0e0b44b5189dcce24"
-bastion_public_ip = "13.213.1.147"
-control_plane_instance_id = "i-08f9d42d59a9d7b1e"
-control_plane_private_ip = "10.0.10.138"
-ecr_repository_urls = {
-  "catalog-api" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api"
-  "order-worker" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker"
-  "web" = "051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web"
-}
-private_subnet_ids = [
-  "subnet-073a3c3c5d67501fe",
-  "subnet-0cf92a2813edcb251",
-]
-public_subnet_ids = [
-  "subnet-04e9566f45379ac29",
-  "subnet-0243512cdc27f97a6",
-]
-vpc_id = "vpc-06c07c2660e10b166"
-worker_instance_ids = [
-  "i-095144aefa318b6aa",
-  "i-0a7ec7b9d26d1812b",
-]
-worker_private_ips = [
-  "10.0.10.92",
-  "10.0.11.191",
-]
+```text
+051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-web
+051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-catalog-api
+051826735078.dkr.ecr.ap-southeast-1.amazonaws.com/shoplite-order-worker
+```

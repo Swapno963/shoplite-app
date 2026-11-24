@@ -1,32 +1,38 @@
-1. create vpc
-2. create subnet
-3. create internet gateway
-4. Route table
-5. associate subent with route table
-6. Edit route table, if destination is 0.0.0.0/0 then it will use igw 
-7. Creating security group
-Create 3 inbound rules
-TCP : 22 : 0.0.0.0/0
-TCP : 80 : 0.0.0.0/0
-TCP : 443 : 0.0.0.0/0
+# First Ubuntu box (manual AWS console)
 
-8. Create ec2 instance of ubuntu 24.04
-9. Give readonly permission: chmod 400 shoplite-q3.pem
-10. shh into ec2 machine: ssh -i shoplite-q3.pem ubuntu@13.215.46.100
+This is the small Linux box I used before Terraform owned everything. If you want to repeat it by hand:
 
+1. Create a VPC
+2. Create a subnet
+3. Create an internet gateway
+4. Create a route table
+5. Associate the subnet with that route table
+6. Add a default route: destination `0.0.0.0/0` → the IGW
+7. Security group, three inbound rules:
+   - TCP 22 from `0.0.0.0/0` (lock this to your IP if you can)
+   - TCP 80 from `0.0.0.0/0`
+   - TCP 443 from `0.0.0.0/0`
+8. Launch Ubuntu 24.04
+9. Lock the key file:
 
+```bash
+chmod 400 shoplite-q3.pem
+```
 
+10. SSH in (IP will be whatever AWS gave you):
 
+```bash
+ssh -i shoplite-q3.pem ubuntu@13.215.46.100
+```
 
-### Install docker
+## Docker on that box
+
+```bash
 sudo apt update
-
-sudo apt install -y docker.io 
-
+sudo apt install -y docker.io
 sudo apt install docker-compose-v2
 sudo apt install -y make
 
-
-# Verify installation
 docker --version
 docker compose version
+```

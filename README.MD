@@ -1,101 +1,43 @@
 # ShopLite
 
-> A production-style cloud-native e-commerce platform built to demonstrate modern DevOps, Platform Engineering, SRE, and Cloud Operations practices on AWS.
+Small e-commerce app on a Kubernetes cluster I built on AWS. Customers browse products and place orders; a worker finishes those orders in the background.
 
-## Overview
+This repo is the application, Helm chart, Terraform, Ansible, CI, and observability. Desired state for each environment lives in [shoplite-gitops](https://github.com/Swapno963/shoplite-gitops). Argo CD watches both repos.
 
-ShopLite is a small e-commerce backend designed around a realistic startup scenario where a single DevOps Engineer is responsible for the entire platform lifecycle, from infrastructure provisioning and application deployment to observability, security, CI/CD, incident response, and production troubleshooting.
+## What it does
 
-The platform allows users to place orders, processes them asynchronously, and exposes comprehensive operational visibility through metrics, logs, traces, dashboards, and alerts.
+Someone hits the site through an ALB. Nginx in the cluster routes to **web**. Web talks to **catalog-api**, which writes Postgres and drops a job on Redis. **order-worker** picks that up and updates the order.
 
-This project serves as a hands-on implementation of:
-
-- AWS Infrastructure as Code (Terraform)
-- Linux Administration & Security Hardening
-- Docker & Containerization
-- Kubernetes Operations
-- GitOps with ArgoCD
-- CI/CD with GitHub Actions
-- Monitoring, Logging, and Distributed Tracing
-- Incident Management and Root Cause Analysis (RCA)
-
----
-
-## Architecture
-
-### Infrastructure
-
-- AWS VPC spanning two Availability Zones
-- Two public subnets
-- Two private subnets
-- Application Load Balancer (ALB)
-- Kubernetes cluster
-  - 1 Control Plane Node
-  - 2 Worker Nodes
-- Amazon ECR for container image storage
-
-### Platform Services
-
-- GitHub Actions for CI/CD
-- ArgoCD for GitOps deployments
-- Prometheus for metrics collection
-- Loki for log aggregation
-- Tempo for distributed tracing
-- Grafana for observability dashboards
-- Alertmanager for operational alerting
-
----
-
-## Application Components
-
-### Web Frontend
-
-Provides the customer-facing interface for placing and tracking orders.
-
-### Catalog API
-
-Responsible for:
-
-- Product catalog operations
-- Order creation
-- PostgreSQL persistence
-- Redis queue publishing
-
-### Order Worker
-
-Background worker responsible for:
-
-- Consuming order jobs from Redis
-- Processing orders asynchronously
-- Updating order status in PostgreSQL
-
----
-
-## Application Flow
+Traffic:
 
 ```text
-User
-  │
-  ▼
-Application Load Balancer
-  │
-  ▼
-Web Frontend
-  │
-  ▼
-Catalog API
-  │
-  ├── PostgreSQL
-  │
-  └── Redis Queue
-          │
-          ▼
-      Order Worker
-          │
-          ▼
-      PostgreSQL
+User → ALB → ingress-nginx → web → catalog-api
+                                    ├── PostgreSQL
+                                    └── Redis → order-worker → PostgreSQL
+```
 
-Metrics + Logs + Traces
-          │
-          ▼
-       Grafana
+## Stack
+
+| Layer | What I used |
+|-------|-------------|
+| Cloud | AWS (VPC, two AZs, ALB, ECR) |
+| Cluster | kubeadm: 1 control plane, 2 workers, private subnets |
+| App | web, catalog-api, order-worker |
+| Data | PostgreSQL, Redis |
+| Ship | GitHub Actions → ECR, Argo CD from Git |
+| Watch | Prometheus, Loki, Tempo, Grafana, Alertmanager |
+
+Terraform owns the network, ALB, nodes, and ECR. Ansible hardens and bootstraps the nodes. Helm charts in this repo cover ingress-nginx, the AWS load balancer controller, and observability. ShopLite itself is not `helm upgrade`’d by hand; Argo CD applies `helm/shoplite` plus overlays from gitops.
+
+## Layout
+
+```text
+application/     web, catalog-api, order-worker
+helm/            shoplite chart and cluster add-ons
+terraform/       AWS
+ansible/         node setup
+.github/         CI, image builds, GitOps tag bumps
+evidence/        notes from the build
+```
+
+Dev and prod are separate namespaces (`shoplite-dev`, `shoplite-prod`). Image tags for those environments are in gitops `envs/*/values.yaml`.

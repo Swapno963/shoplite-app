@@ -8,7 +8,8 @@ Thumbs.db
 *~
 
 
-
+ansible/artifacts/*
+ansible/inventory/*
 
 /credentials
 
