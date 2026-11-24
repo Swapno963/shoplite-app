@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from tracing import current_trace_id
 
-# 12
+# 123
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload = {

@@ -3,7 +3,7 @@ name: Build Catalog API
 on:
   push:
     branches:
-      - test-application
+      - main
     paths:
       - 'application/catalog-api/**'
 

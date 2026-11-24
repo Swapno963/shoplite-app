@@ -3,7 +3,7 @@ name: Security Scan
 on:
   push:
     branches:
-      - test-application
+      - main
 
 jobs:
   trivy-scan:
