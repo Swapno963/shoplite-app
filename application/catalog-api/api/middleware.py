@@ -5,7 +5,7 @@ from django.utils.deprecation import MiddlewareMixin
 from opentelemetry import trace
 
 from api.metrics import HTTP_REQUEST_DURATION_SECONDS, HTTP_REQUESTS_TOTAL
-from catalog.tracing import set_trace_id
+from catalog.tracing import current_exemplar, set_trace_id
 
 
 def _normalize_path(path: str) -> str:
@@ -47,14 +47,10 @@ class MetricsMiddleware(MiddlewareMixin):
                 route=route,
                 status=str(response.status_code),
             ).inc()
-            exemplar = None
-            trace_id = getattr(request, "trace_id", None)
-            if trace_id:
-                exemplar = {"trace_id": trace_id}
             HTTP_REQUEST_DURATION_SECONDS.labels(
                 method=request.method,
                 route=route,
-            ).observe(duration, exemplar=exemplar)
+            ).observe(duration, exemplar=current_exemplar())
         if hasattr(request, "trace_id"):
             response["X-Trace-Id"] = request.trace_id
         return response

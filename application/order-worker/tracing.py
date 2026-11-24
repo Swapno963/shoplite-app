@@ -55,6 +55,16 @@ def current_trace_id() -> str:
     return "-"
 
 
+def current_exemplar() -> dict | None:
+    ctx = trace.get_current_span().get_span_context()
+    if ctx is None or not ctx.is_valid:
+        return None
+    return {
+        "trace_id": format(ctx.trace_id, "032x"),
+        "span_id": format(ctx.span_id, "016x"),
+    }
+
+
 def attach_queue_context(payload: dict):
     ctx = extract(payload)
     return context.attach(ctx)
@@ -64,10 +74,21 @@ def detach_queue_context(token) -> None:
     context.detach(token)
 
 
+def start_consume_span(order_id: int):
+    tracer = trace.get_tracer("order-worker")
+    return tracer.start_as_current_span(
+        "consume_from_queue",
+        attributes={
+            "order.id": order_id,
+            "messaging.system": "redis",
+            "messaging.operation": "receive",
+        },
+    )
+
+
 def start_process_span(order_id: int):
     tracer = trace.get_tracer("order-worker")
-    span = tracer.start_as_current_span(
+    return tracer.start_as_current_span(
         "process_order",
         attributes={"order.id": order_id},
     )
-    return span

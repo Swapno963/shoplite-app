@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 import psycopg
 import redis
+from opentelemetry.instrumentation.utils import suppress_instrumentation
 
 from logging_utils import configure_logging
 from metrics import (
@@ -18,9 +19,11 @@ from metrics import (
 )
 from tracing import (
     attach_queue_context,
+    current_exemplar,
     current_trace_id,
     detach_queue_context,
     setup_telemetry,
+    start_consume_span,
     start_process_span,
 )
 
@@ -183,7 +186,8 @@ def main() -> None:
     try:
         while not shutdown_requested:
             refresh_queue_depth(redis_client)
-            item = redis_client.blpop(ORDERS_QUEUE, timeout=1)
+            with suppress_instrumentation():
+                item = redis_client.blpop(ORDERS_QUEUE, timeout=1)
             if item is None:
                 continue
             _queue, raw = item
@@ -192,9 +196,14 @@ def main() -> None:
                 payload = json.loads(raw)
                 token = attach_queue_context(payload)
                 started = time.perf_counter()
-                with start_process_span(payload["order_id"]):
-                    process_order(conn, payload)
-                ORDER_PROCESSING_SECONDS.observe(time.perf_counter() - started)
+                order_id = payload["order_id"]
+                with start_consume_span(order_id):
+                    with start_process_span(order_id):
+                        process_order(conn, payload)
+                        ORDER_PROCESSING_SECONDS.observe(
+                            time.perf_counter() - started,
+                            exemplar=current_exemplar(),
+                        )
             except Exception:
                 logger.exception("failed to process message: %s", raw)
                 ORDERS_PROCESSED_TOTAL.labels(result="error").inc()

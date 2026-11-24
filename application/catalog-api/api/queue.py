@@ -3,6 +3,7 @@ import logging
 
 import redis
 from django.conf import settings
+from opentelemetry import trace
 from opentelemetry.propagate import inject
 
 logger = logging.getLogger(__name__)
@@ -18,10 +19,19 @@ def get_redis():
 
 
 def enqueue_order(order_id: int) -> None:
-    payload = {"order_id": order_id}
-    inject(payload)
-    get_redis().lpush(settings.ORDERS_QUEUE, json.dumps(payload))
-    logger.info("enqueued order %s", order_id)
+    tracer = trace.get_tracer("catalog-api")
+    with tracer.start_as_current_span(
+        "enqueue_order",
+        attributes={
+            "order.id": order_id,
+            "messaging.system": "redis",
+            "messaging.destination": settings.ORDERS_QUEUE,
+        },
+    ):
+        payload = {"order_id": order_id}
+        inject(payload)
+        get_redis().lpush(settings.ORDERS_QUEUE, json.dumps(payload))
+        logger.info("enqueued order %s", order_id)
 
 
 def queue_depth() -> int:
